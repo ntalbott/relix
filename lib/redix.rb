@@ -178,12 +178,16 @@ module Redix
   end
 
   def self.redis
-    @redis ||= Redis.new
+    @redis ||= ::Redis.new(port: @redis_port)
     if block_given?
       yield(@redis)
     else
       @redis
     end
+  end
+
+  def self.port=(value)
+    @redis_port = value
   end
 
   class IndexNotUniqueError < StandardError; end
