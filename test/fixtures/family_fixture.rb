@@ -1,6 +1,8 @@
 class Family
   include Redix
-  primary_key :key
+  redix do
+    primary_key :key
+  end
   attr_reader :key
   def initialize(key)
     @key = key
@@ -10,9 +12,12 @@ end
 
 class Person
   include Redix
-  primary_key :key
-  index :family_key
-  index :birthyear
+  redix do
+    primary_key :key
+    multi :family_key
+    multi :birthyear
+    ordered :birthyear
+  end
   attr_reader :key, :family_key, :birthyear
   def initialize(key, family_key, birthyear=nil)
     @key = key

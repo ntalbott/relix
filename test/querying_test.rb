@@ -6,7 +6,7 @@ class QueryingTest < RedixTest
   def test_missing_index
     model = Class.new do
       include Redix
-      primary_key :key
+      redix.primary_key :key
     end
     assert_raise Redix::MissingIndexError do
       model.lookup{|q| q[:bogus].eq('something')}

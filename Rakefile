@@ -11,7 +11,7 @@ Rake::TestTask.new do |t|
 end
 
 task :redis do
-  if `redis-cli -p 10000 PING` =~ /PONG/
+  if `redis-cli -p 10000 PING 2>&1` =~ /PONG/
     raise "Redis is already running!"
   else
     pid = Process.spawn("redis-server #{ROOT}/test/redis.conf", [:out, :err] => "/dev/null")
