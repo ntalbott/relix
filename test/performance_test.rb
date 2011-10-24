@@ -16,14 +16,14 @@ class PerformanceTest < RedixTest
     10.times do |i|
       0.step(10).each do |one|
         0.step(10).each do |two|
-          assert_time 700, profiling: "indexing #{i}, #{one}, #{two}", delta: -1 do
+          assert_time 720, profiling: "indexing #{i}, #{one}, #{two}", delta: -1 do
             m.new(rand(1000000000), one, two)
           end
         end
       end
     end
 
-    assert_time 50, profiling: 'lookup', delta: 20 do
+    assert_time 60, profiling: 'lookup', delta: 40 do
       m.lookup do |q|
         q[:one].eq(50)
         q[:two].eq(500)

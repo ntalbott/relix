@@ -34,6 +34,7 @@ module Redix
     def initialize(model)
       @model = model
       @sort = 'primary_key'
+      @offset = 0
       @clauses = []
     end
 
@@ -52,6 +53,11 @@ module Redix
         results = @clauses.collect{|clause| clause.lookup}.inject{|result, accumulator| (result & accumulator)}
       end
       results = @model.indexes[@sort.to_s].sort(results) if @sort
+      if(@limit || @offset != 0)
+        range_end = (@limit ? (@offset + @limit - 1) : -1)
+        results = results[@offset..range_end]
+      end
+      results = results
       results
     end
 
@@ -61,6 +67,17 @@ module Redix
       else
         @sort = "#{field}_sort"
       end
+      self
+    end
+
+    def limit(amount)
+      @limit = amount.to_i
+      self
+    end
+
+    def offset(index)
+      @offset = index.to_i
+      self
     end
 
     class Clause

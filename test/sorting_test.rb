@@ -16,4 +16,14 @@ class SortingTest < RedixTest
     assert_equal @everyone.sort_by{|e| [e.birthyear, e.key.to_s]}.collect{|e| e.key},
       Person.lookup{|q| q.sort(:birthyear)}
   end
+
+  def test_limit
+    assert_equal @everyone.sort_by{|e| [e.birthyear, e.key.to_s]}.collect{|e| e.key}[0..4],
+      Person.lookup{|q| q.sort(:birthyear).limit(5)}
+  end
+
+  def test_offset
+    assert_equal @everyone.sort_by{|e| [e.birthyear, e.key.to_s]}.collect{|e| e.key}[5..-1],
+      Person.lookup{|q| q.sort(:birthyear).offset(5)}
+  end
 end
