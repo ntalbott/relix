@@ -154,7 +154,7 @@ module Redix
             next if value == old_value
             current_values[name] = value
 
-            next if index.skip?(r, value)
+            next if index.skip?(r, pk, value)
 
             query_value = index.query(r, value)
             indexers << proc do
@@ -195,7 +195,7 @@ module Redix
       nil
     end
 
-    def skip?(r, value)
+    def skip?(r, pk, value)
       false
     end
 
@@ -224,12 +224,53 @@ module Redix
   end
 
   class UniqueIndex < Index
+    def initialize(accessor, name)
+      super
+      @set_name = "#{@name}:set"
+      @hash_name = "#{@name}:hash"
+    end
+
+    def watch
+      [@set_name, @hash_name]
+    end
+
+    def skip?(r, pk, value)
+      if r.zscore(@set_name, value)
+        raise NotUniqueError.new("'#{value}'' is not unique in index #{@name}")
+      end
+      false
+    end
+
+    def query(r, value)
+      value.to_f
+    end
+
+    def index(r, pk, value, old_value, score)
+      r.hset(@hash_name, value, pk)
+      r.hdel(@hash_name, old_value)
+      r.zadd(@set_name, score, value)
+    end
+
+    def lookup
+      Redix.redis.zrange(@name, 0, -1)
+    end
+
+    def eq(value)
+      [Redix.redis.hget(@hash_name, value)].compact
+    end
+
+    def kind
+      "unique"
+    end
+  end
+
+  class PrimaryKeyIndex < Index
     def watch
       @name
     end
 
-    def skip?(r, value)
-      r.zrank(@name, value)
+    def skip?(r, pk, value)
+      r.zrank(@name, pk)
     end
 
     def query(r, value)
@@ -237,8 +278,7 @@ module Redix
     end
 
     def index(r, pk, value, old_value, rank)
-      r.zadd(@name, rank, value)
-      r.zrem(@name, old_value)
+      r.zadd(@name, rank, pk)
     end
 
     def lookup
@@ -263,7 +303,7 @@ module Redix
     end
 
     def kind
-      "unique"
+      "primary_key"
     end
   end
 
@@ -295,7 +335,7 @@ module Redix
   end
 
   INDEX_TYPES = {
-    primary_key: UniqueIndex,
+    primary_key: PrimaryKeyIndex,
     multi: MultiIndex,
     ordered: OrderedIndex,
     unique: UniqueIndex,
@@ -317,4 +357,5 @@ module Redix
   class IndexNotUniqueError < StandardError; end
   class MissingIndexError < StandardError; end
   class MissingPrimaryKeyError < StandardError; end
+  class NotUniqueError < StandardError; end
 end

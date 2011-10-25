@@ -48,7 +48,7 @@ class PerformanceTest < RedixTest
       end
     end
 
-    assert_time 400, profiling: 'lookup' do
+    assert_time 390, profiling: 'lookup' do
       m.lookup{|q| q.sort(:sortme)}
     end
   end
