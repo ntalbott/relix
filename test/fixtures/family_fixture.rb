@@ -18,7 +18,7 @@ class Person
     multi :birthyear
     ordered :birthyear
   end
-  attr_reader :key, :family_key, :birthyear
+  attr_accessor :key, :family_key, :birthyear
   def initialize(key, family_key, birthyear=nil)
     @key = key
     @family_key = family_key

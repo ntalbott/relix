@@ -138,8 +138,37 @@ module Redix
 
     def index!(object)
       pk = read_primary_key(object)
-      @indexes.each do |_,index|
-        index.index!(object, pk)
+      current_values_name = "#{key_prefix('current_values')}:#{pk}"
+
+      Redix.redis do |r|
+        loop do
+          r.watch current_values_name
+          current_values = r.hgetall(current_values_name)
+          indexers = []
+          @indexes.each do |name,index|
+            ((watch = index.watch) && r.watch(*watch))
+
+            value = index.read(object)
+            old_value = current_values[name]
+
+            next if value == old_value
+            current_values[name] = value
+
+            next if index.skip?(r, value)
+
+            query_value = index.query(r, value)
+            indexers << proc do
+              index.index(r, pk, value, old_value, *query_value)
+            end
+          end
+          result = r.multi do
+            indexers.each do |indexer|
+              indexer.call
+            end
+            r.hmset(current_values_name, *current_values.flatten)
+          end
+          break if result
+        end
       end
     end
 
@@ -162,14 +191,27 @@ module Redix
       object.send(@accessor)
     end
 
+    def watch
+      nil
+    end
+
+    def skip?(r, value)
+      false
+    end
+
+    def query(r, value)
+      nil
+    end
+
     def key_for(value)
       "#{@name}:#{value}"
     end
   end
 
   class MultiIndex < Index
-    def index!(object, pk)
-      Redix.redis.sadd(key_for(read(object)), pk)
+    def index(r, pk, value, old_value)
+      r.sadd(key_for(value), pk)
+      r.srem(key_for(old_value), pk)
     end
 
     def eq(value)
@@ -182,22 +224,21 @@ module Redix
   end
 
   class UniqueIndex < Index
-    def index!(object, pk)
-      value = read(object)
-      Redix.redis do |r|
-        loop do
-          r.watch @name
-          if(r.zrank(@name, value))
-            r.unwatch
-            return
-          end
-          rank = r.zcard @name
-          result = r.multi do
-            r.zadd(@name, rank, value)
-          end
-          break if result
-        end
-      end
+    def watch
+      @name
+    end
+
+    def skip?(r, value)
+      r.zrank(@name, value)
+    end
+
+    def query(r, value)
+      r.zcard(@name)
+    end
+
+    def index(r, pk, value, old_value, rank)
+      r.zadd(@name, rank, value)
+      r.zrem(@name, old_value)
     end
 
     def lookup
@@ -227,10 +268,8 @@ module Redix
   end
 
   class OrderedIndex < Index
-    def index!(object, pk)
-      Redix.redis do |r|
-        r.zadd(@name, rank(read(object)), pk)
-      end
+    def index(r, pk, value, old_value)
+      r.zadd(@name, rank(value), pk)
     end
 
     def sort(results)
