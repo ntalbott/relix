@@ -308,7 +308,10 @@ module Redix
   }
 
   def self.redis
-    @redis ||= ::Redis.new(port: @redis_port)
+    unless @redis
+      @redis = ::Redis.new(port: @redis_port)
+      @redis.select @redis_db if @redis_db
+    end
     if block_given?
       yield(@redis)
     else
@@ -318,6 +321,10 @@ module Redix
 
   def self.port=(value)
     @redis_port = value
+  end
+
+  def self.db=(value)
+    @redis_db = value
   end
 
   class IndexNotUniqueError < StandardError; end
