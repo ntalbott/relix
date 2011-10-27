@@ -116,7 +116,7 @@ The primary key index is the only index that is required on a model. Under the c
       primary_key :id
     end
 
-**Supported Operators**: eq, gt, lt, all
+**Supported Operators**: eq, all
 **Ordering**: insertion
 
 ### MultiIndex
@@ -127,7 +127,7 @@ Multi indexes allow multiple matching primary keys per indexed value, and are id
       multi :account_id, order: :created_at
     end
 
-**Supported Operators**: eq, gt, lt
+**Supported Operators**: eq
 **Ordering**: can be ordered on any numeric attribute (default is the to_i of the indexed value)
 
 ### UniqueIndex
@@ -138,5 +138,5 @@ Unique indexes will raise an error if the same value is indexed twice for a diff
       unique :email
     end
 
-**Supported Operators**: eq, gt, lt, all
+**Supported Operators**: eq, all
 **Ordering**: can be ordered on any numeric attribute (default is the to_i of the indexed value)
