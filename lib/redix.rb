@@ -33,66 +33,45 @@ module Redix
   class Query
     def initialize(model)
       @model = model
-      @sort = 'primary_key'
       @offset = 0
-      @clauses = []
     end
 
     def [](index_name)
       index = @model.indexes[index_name.to_s]
       raise MissingIndexError.new("No index declared for #{index_name}") unless index
-      clause = Clause.new(self, index)
-      @clauses << clause
-      clause
+      @clause = Clause.new(index)
     end
 
     def run
-      if @clauses.empty?
-        results = @model.indexes['primary_key'].lookup
+      if @clause
+        @clause.lookup
       else
-        results = @clauses.collect{|clause| clause.lookup}.inject{|result, accumulator| (result & accumulator)}
+        @model.indexes['primary_key'].lookup
       end
-      results = @model.indexes[@sort.to_s].sort(results) if @sort
-      if(@limit || @offset != 0)
-        range_end = (@limit ? (@offset + @limit - 1) : -1)
-        results = results[@offset..range_end]
-      end
-      results = results
-      results
-    end
-
-    def sort(field)
-      if field.to_s == 'primary_key'
-        @sort = 'primary_key'
-      else
-        @sort = "#{field}_sort"
-      end
-      self
-    end
-
-    def limit(amount)
-      @limit = amount.to_i
-      self
-    end
-
-    def offset(index)
-      @offset = index.to_i
-      self
     end
 
     class Clause
-      def initialize(query, index)
-        @query = query
+      def initialize(index)
         @index = index
+        @options = {}
       end
 
-      def eq(value)
+      def eq(value, options={})
         @value = value
-        @query
+        @options = options
+      end
+
+      def all(options={})
+        @all = true
+        @options = options
       end
 
       def lookup
-        @index.eq(@value)
+        if @all
+          @index.all(@options)
+        else
+          @index.eq(@value, @options)
+        end
       end
     end
   end
@@ -105,24 +84,21 @@ module Redix
     end
 
     def primary_key(accessor)
-      @primary_key = add_index(:primary_key, accessor, 'primary_key')
+      @primary_key = add_index(:primary_key, 'primary_key', on: accessor)
     end
     alias pk primary_key
 
-    def multi(accessor)
-      add_index(:multi, accessor)
+    def multi(name, options={})
+      add_index(:multi, name, options)
     end
 
-    def ordered(accessor)
-      add_index(:ordered, accessor, "#{accessor}_sort")
+    def unique(name, options={})
+      add_index(:unique, name, options)
     end
 
-    def unique(accessor)
-      add_index(:unique, accessor)
-    end
-
-    def add_index(index_type, accessor, name=accessor)
-      @indexes[name.to_s] = INDEX_TYPES[index_type].new(accessor, key_prefix(name))
+    def add_index(index_type, name, options={})
+      accessor = (options.delete(:on) || name)
+      @indexes[name.to_s] = INDEX_TYPES[index_type].new(accessor, key_prefix(name), options)
     end
 
     def lookup(&block)
@@ -132,7 +108,7 @@ module Redix
         yield(query)
         query.run
       else
-        @primary_key.lookup
+        @primary_key.all
       end
     end
 
@@ -158,7 +134,7 @@ module Redix
 
             query_value = index.query(r, value)
             indexers << proc do
-              index.index(r, pk, value, old_value, *query_value)
+              index.index(r, pk, object, value, old_value, *query_value)
             end
           end
           result = r.multi do
@@ -182,9 +158,10 @@ module Redix
   end
 
   class Index
-    def initialize(accessor, name)
+    def initialize(accessor, name, options={})
       @name = "#{kind}:#{name}"
       @accessor = accessor
+      @options = options
     end
 
     def read(object)
@@ -208,14 +185,42 @@ module Redix
     end
   end
 
-  class MultiIndex < Index
-    def index(r, pk, value, old_value)
-      r.sadd(key_for(value), pk)
-      r.srem(key_for(old_value), pk)
+  module Ordering
+    def initialize(*args)
+      super
+      @order = @options[:order]
     end
 
-    def eq(value)
-      Redix.redis.smembers(key_for(value))
+    def score(object, value)
+      if @order
+        object.send(@order)
+      else
+        case value
+        when Numeric
+          value
+        else
+          value.to_i
+        end
+      end
+    end
+
+    def range_from_options(options)
+      start = (options[:offset] || 0)
+      stop = (options[:limit] ? (start + options[:limit] - 1) : -1)
+      [start, stop]
+    end
+  end
+
+  class MultiIndex < Index
+    include Ordering
+
+    def index(r, pk, object, value, old_value)
+      r.zadd(key_for(value), score(object, value), pk)
+      r.zrem(key_for(old_value), pk)
+    end
+
+    def eq(value, options={})
+      Redix.redis.zrange(key_for(value), *range_from_options(options))
     end
 
     def kind
@@ -224,9 +229,12 @@ module Redix
   end
 
   class UniqueIndex < Index
-    def initialize(accessor, name)
+    include Ordering
+
+    def initialize(*args)
       super
       @set_name = "#{@name}:set"
+      @sorted_set_name = "#{@name}:zset"
       @hash_name = "#{@name}:hash"
     end
 
@@ -235,27 +243,24 @@ module Redix
     end
 
     def skip?(r, pk, value)
-      if r.zscore(@set_name, value)
+      if r.sismember(@set_name, value)
         raise NotUniqueError.new("'#{value}'' is not unique in index #{@name}")
       end
       false
     end
 
-    def query(r, value)
-      value.to_f
-    end
-
-    def index(r, pk, value, old_value, score)
+    def index(r, pk, object, value, old_value)
       r.hset(@hash_name, value, pk)
       r.hdel(@hash_name, old_value)
-      r.zadd(@set_name, score, value)
+      r.zadd(@sorted_set_name, score(object, value), pk)
+      r.sadd(@set_name, value)
     end
 
-    def lookup
-      Redix.redis.zrange(@name, 0, -1)
+    def all(options={})
+      Redix.redis.zrange(@sorted_set_name, *range_from_options(options))
     end
 
-    def eq(value)
+    def eq(value, options={})
       [Redix.redis.hget(@hash_name, value)].compact
     end
 
@@ -265,6 +270,8 @@ module Redix
   end
 
   class PrimaryKeyIndex < Index
+    include Ordering
+
     def watch
       @name
     end
@@ -277,29 +284,16 @@ module Redix
       r.zcard(@name)
     end
 
-    def index(r, pk, value, old_value, rank)
+    def index(r, pk, object, value, old_value, rank)
       r.zadd(@name, rank, pk)
     end
 
-    def lookup
-      Redix.redis.zrange(@name, 0, -1)
+    def all(options={})
+      Redix.redis.zrange(@name, *range_from_options(options))
     end
 
-    def eq(value)
+    def eq(value, options)
       [value]
-    end
-
-    def sort(input)
-      scores = Redix.redis do |r|
-        r.multi do
-          input.each{|e| r.zscore(@name, e)}
-        end
-      end
-      result = []
-      input.each_with_index do |e,i|
-        result[scores[i].to_i] = e
-      end
-      result.compact
     end
 
     def kind
@@ -307,37 +301,9 @@ module Redix
     end
   end
 
-  class OrderedIndex < Index
-    def index(r, pk, value, old_value)
-      r.zadd(@name, rank(value), pk)
-    end
-
-    def sort(results)
-      scores = Redix.redis do |r|
-        r.multi do
-          results.each{|e| r.zrank(@name, e)}
-        end
-      end
-      result = []
-      results.each_with_index do |e,i|
-        result[scores[i].to_i] = e
-      end
-      result.compact
-    end
-
-    def rank(value)
-      value.to_i
-    end
-
-    def kind
-      "ordered"
-    end
-  end
-
   INDEX_TYPES = {
     primary_key: PrimaryKeyIndex,
     multi: MultiIndex,
-    ordered: OrderedIndex,
     unique: UniqueIndex,
   }
 

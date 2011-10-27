@@ -14,9 +14,8 @@ class Person
   include Redix
   redix do
     primary_key :key
-    multi :family_key
-    multi :birthyear
-    ordered :birthyear
+    multi :family_key, order: :birthyear
+    unique :by_birthyear, on: :key, order: :birthyear
   end
   attr_accessor :key, :family_key, :birthyear
   def initialize(key, family_key, birthyear=nil)

@@ -38,13 +38,12 @@ To index something in a model, include the Redix module, declare the primary key
     class Transaction
       include Redix
 
-      attr_accessor :key, :account_key, :created_at
+      attr_accessor :key, :account_key, :amount, :created_at
 
       redix do
         primary_key :key
-        multi :account_key
-        multi :created_at
-        ordered :created_at, :numeric
+        multi :account_key, order: :created_at
+        unique :by_amount, on: :key, order: :amount
       end
 
       def initialize(key, account_key, created_at)
@@ -64,10 +63,10 @@ To index something in a model, include the Redix module, declare the primary key
 
 Note the #index! call to trigger actual indexing.
 
-Now that your indexes are declared, you can use the indexes to do lookups:
+Now that your indexes are declared, you can use an index to do a lookups:
 
     p Transaction.lookup{|q| q[:account_key].eq(1) }   # => [1]
-    p Transaction.lookup{|q| q[:account_key].eq(2) }   # => [2,3,4]
+    p Transaction.lookup{|q| q[:account_key].eq(2) }   # => [4,2,3]
 
 The result is always an array of primary keys. You can also use a bare lookup to return all records:
 
@@ -76,33 +75,60 @@ The result is always an array of primary keys. You can also use a bare lookup to
     # Also useful for counting:
     p Transaction.lookup.size  # => 4
 
-You can sort results (default sort is by primary key):
+Some indexes can be ordered by default:
 
-    p Transaction.lookup{|q| q[:account_key].eq(2).sort(:created_at)}  # => [4,2,3]
+    p Transaction.lookup{|q| q[:account_key].eq(2)}  # => [4,2,3]
 
 Which can be combined with offset and limit:
 
-    p Transaction.lookup{|q| q[:account_key].eq(2).sort(:created_at).limit(1)}            # => [4]
-    p Transaction.lookup{|q| q[:account_key].eq(2).sort(:created_at).limit(1).offset(1)}  # => [2]
-    p Transaction.lookup{|q| q[:account_key].eq(2).sort(:created_at).limit(1).offset(2)}  # => [3]
+    p Transaction.lookup{|q| q[:account_key].eq(2, limit: 1)}             # => [4]
+    p Transaction.lookup{|q| q[:account_key].eq(2, limit: 1, offset: 1)}  # => [2]
+    p Transaction.lookup{|q| q[:account_key].eq(2, limit: 1, offset: 2)}  # => [3]
+
+Since the :primary_key index is ordered by insertion order, we've also declared a :by_created_at index on key that gives us the records ordered by the #created_at attribute:
+
+    p Transaction.lookup{|q| q[:by_created_at].all}  # => 
+
+## Querying
+
+Redix uses a simple query language based on method chaining. A "root" query is passed in to the lookup block, and then query terms are chained off of it:
+
+    class Person
+      include Redix
+      redix do
+        primary_key :key
+        multi :name, order: :birthdate
+      end
+    end
+
+    people = Person.lookup{|q| q[:name].eq("Bob Smith")}
+
+Basically you just specify an index, and an operation against that index. In addition, you can specify options for the query, such as limit and offset, if supported by the index type. Redix currently only supports querying by a single index at a time.
+
 
 ## Indexes
 
 ### PrimaryKeyIndex
 
-The primary key index is the only index that is required on a model. Under the covers it is a specialized UniqueIndex, and it is stably sorted in insertion order. It is declared using #primary_key within the redix block:
+The primary key index is the only index that is required on a model. Under the covers it is stored very similarly to a UniqueIndex, and it is stably sorted in insertion order. It is declared using #primary_key within the redix block:
 
     redix do
       primary_key :id
     end
 
+**Supported Operators**: eq, all
+**Ordering**: insertion
+
 ### MultiIndex
 
-Multi indexes allow multiple matching primary keys per indexed value, and are ideal for one to many relationships. They provide no ordering, and are declared using #multi in the redix block:
+Multi indexes allow multiple matching primary keys per indexed value, and are ideal for one to many relationships. They can include an ordering, and are declared using #multi in the redix block:
 
     redix do
-      multi :account_id
+      multi :account_id, order: :created_at
     end
+
+**Supported Operators**: eq
+**Ordering**: can optionally be ordered on any numeric attribute (default is the to_i of the indexed value)
 
 ### UniqueIndex
 
@@ -112,34 +138,5 @@ Unique indexes will raise an error if the same value is indexed twice for a diff
       unique :email
     end
 
-### OrderedIndex
-
-Ordered indexes allow sorting, limiting, and offsetting, which are very useful for pagination. They are declared using #ordered in the redix block:
-
-    redix do
-      ordered :created_at
-    end
-
-## Query Language
-
-Redix uses a simple query language based on method chaining. A "root" query is passed in to the lookup block, and then query terms are chained off of it:
-
-    class Person
-      include Redix
-      redix do
-        primary_key :key
-        multi :name
-        multi :birthdate
-        ordered :birthdate
-      end
-    end
-
-    people = Person.lookup do |q|
-      q[:name].eq("Bob Smith")
-      q.sort(:birthdate)
-    end
-
-Basically you just specify an index, and an operation against that index. In addition, you can specify general settings for the query, such as sort, limit and offset.
-
-Allowable operations are #eq (equal), #ne (not equal), #gt (greater than), #lt (less than).
-
+**Supported Operators**: eq, all
+**Ordering**: can optionally be ordered on any numeric attribute (default is the to_i of the indexed value)

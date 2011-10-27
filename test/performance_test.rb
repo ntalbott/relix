@@ -1,32 +1,28 @@
 require 'test_helper'
 
 class PerformanceTest < RedixTest
-  def test_double_index
+  def test_multi_index
     m = Class.new do
       include Redix
       redix do
         primary_key :key
-        multi :one
-        multi :two
+        multi :thing
       end
-      attr_reader :key, :one, :two
-      def initialize(key, one, two); @key, @one, @two = key, one, two; index!; end
+      attr_reader :key, :thing
+      def initialize(key, thing); @key, @thing = key, thing; index!; end
     end
 
     10.times do |i|
-      0.step(10).each do |one|
-        0.step(10).each do |two|
-          assert_time 600, profiling: "indexing #{i}, #{one}, #{two}", delta: -1 do
-            m.new(rand(1000000000), one, two)
-          end
+      0.step(10).each do |thing|
+        assert_time 600, profiling: "indexing #{i}, #{thing}", delta: -1 do
+          m.new(rand(1000000000), thing)
         end
       end
     end
 
-    assert_time 35, profiling: 'lookup', delta: 10 do
+    assert_time 15, profiling: 'eq lookup', delta: 5 do
       m.lookup do |q|
-        q[:one].eq(50)
-        q[:two].eq(500)
+        q[:thing].eq(50)
       end
     end
   end
@@ -36,7 +32,7 @@ class PerformanceTest < RedixTest
       include Redix
       redix do
         primary_key :key
-        ordered :sortme
+        unique :sortme
       end
       attr_reader :key, :sortme
       def initialize(key, sortme); @key, @sortme = key, sortme; index!; end
@@ -48,8 +44,8 @@ class PerformanceTest < RedixTest
       end
     end
 
-    assert_time 390, profiling: 'lookup' do
-      m.lookup{|q| q.sort(:sortme)}
+    assert_time 50, profiling: 'lookup', delta: 15 do
+      m.lookup{|q| q[:sortme].all}
     end
   end
 
