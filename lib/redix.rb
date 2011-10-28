@@ -77,14 +77,13 @@ module Redix
   end
 
   class Model
-    attr_reader :indexes
     def initialize(klass)
       @klass = klass
       @indexes = Hash.new
     end
 
     def primary_key(accessor)
-      @primary_key = add_index(:primary_key, 'primary_key', on: accessor)
+      add_index(:primary_key, 'primary_key', on: accessor)
     end
     alias pk primary_key
 
@@ -101,19 +100,28 @@ module Redix
       @indexes[name.to_s] = INDEX_TYPES[index_type].new(accessor, key_prefix(name), options)
     end
 
+    def indexes
+      (parent ? parent.indexes.merge(@indexes) : @indexes)
+    end
+
     def lookup(&block)
-      raise MissingPrimaryKeyError.new("You must declare a primary key for #{@klass.name}") unless @primary_key
+      unless primary_key = indexes['primary_key']
+        raise MissingPrimaryKeyError.new("You must declare a primary key for #{@klass.name}")
+      end
       if block
         query = Query.new(self)
         yield(query)
         query.run
       else
-        @primary_key.all
+        primary_key.all
       end
     end
 
     def index!(object)
-      pk = read_primary_key(object)
+      unless primary_key_index = indexes['primary_key']
+        raise MissingPrimaryKeyError.new("You must declare a primary key for #{@klass.name}")
+      end
+      pk = primary_key_index.read(object)
       current_values_name = "#{key_prefix('current_values')}:#{pk}"
 
       Redix.redis do |r|
@@ -121,7 +129,7 @@ module Redix
           r.watch current_values_name
           current_values = r.hgetall(current_values_name)
           indexers = []
-          @indexes.each do |name,index|
+          indexes.each do |name,index|
             ((watch = index.watch) && r.watch(*watch))
 
             value = index.read(object)
@@ -152,8 +160,12 @@ module Redix
       "#{@klass.name}:#{name}"
     end
 
-    def read_primary_key(object)
-      @primary_key.read(object)
+    def parent
+      unless @parent || @parent == false
+        parent = @klass.superclass
+        @parent = (parent.respond_to?(:redix) ? parent.redix : false)
+      end
+      @parent
     end
   end
 
