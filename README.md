@@ -105,6 +105,16 @@ Redix uses a simple query language based on method chaining. A "root" query is p
 
 Basically you just specify an index, and an operation against that index. In addition, you can specify options for the query, such as limit and offset, if supported by the index type. Redix currently only supports querying by a single index at a time.
 
+Any ordered index can also be offset and limited:
+
+    people = Person.lookup{|q| q[:name].eq("Bob Smith", offset: 5, limit: 5)}
+
+In addition, rather than an offset, an indexed object can be specified as a starting place using from:
+
+    person_id = Person.lookup{|q| q[:name].eq("Bob Smith")[2]}
+    people = Person.lookup{|q| q[:name].eq("Bob Smith", from: person_id)}
+
+The from option is exclusive - it does not return or count the key you pass to it.
 
 ## Indexes
 

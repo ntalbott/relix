@@ -204,8 +204,11 @@ module Redix
       end
     end
 
-    def range_from_options(options)
+    def range_from_options(options, value=nil)
       start = (options[:offset] || 0)
+      if f = options[:from]
+        start = (position(f, value) + 1)
+      end
       stop = (options[:limit] ? (start + options[:limit] - 1) : -1)
       [start, stop]
     end
@@ -220,7 +223,11 @@ module Redix
     end
 
     def eq(value, options={})
-      Redix.redis.zrange(key_for(value), *range_from_options(options))
+      Redix.redis.zrange(key_for(value), *range_from_options(options, value))
+    end
+
+    def position(pk, value)
+      Redix.redis.zrank(key_for(value), pk)
     end
 
     def kind
