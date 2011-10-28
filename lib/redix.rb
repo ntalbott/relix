@@ -75,7 +75,9 @@ module Redix
       end
 
       def lookup
-        if @all
+        if @options[:limit] == 0
+          []
+        elsif @all
           @index.all(@options)
         else
           @index.eq(@value, @options)
