@@ -7,6 +7,14 @@ module Redix
     klass.extend ClassMethods
   end
 
+  def self.index_types
+    @index_types ||= {}
+  end
+
+  def self.register_index(name, index)
+    index_types[name.to_sym] = index
+  end
+
   module ClassMethods
     def redix(&block)
       @redix ||= Model.new(self)
@@ -87,17 +95,17 @@ module Redix
     end
     alias pk primary_key
 
-    def multi(name, options={})
-      add_index(:multi, name, options)
-    end
-
-    def unique(name, options={})
-      add_index(:unique, name, options)
+    def method_missing(m, *args)
+      if Redix.index_types.keys.include?(m.to_sym)
+        add_index(m, *args)
+      else
+        super
+      end
     end
 
     def add_index(index_type, name, options={})
       accessor = (options.delete(:on) || name)
-      @indexes[name.to_s] = INDEX_TYPES[index_type].new(accessor, key_prefix(name), options)
+      @indexes[name.to_s] = Redix.index_types[index_type].new(accessor, key_prefix(name), options)
     end
 
     def indexes
@@ -171,7 +179,7 @@ module Redix
 
   class Index
     def initialize(accessor, name, options={})
-      @name = "#{kind}:#{name}"
+      @name = "#{self.class.name}:#{name}"
       @accessor = accessor
       @options = options
     end
@@ -241,11 +249,8 @@ module Redix
     def position(pk, value)
       Redix.redis.zrank(key_for(value), pk)
     end
-
-    def kind
-      "multi"
-    end
   end
+  register_index :multi, MultiIndex
 
   class UniqueIndex < Index
     include Ordering
@@ -282,11 +287,8 @@ module Redix
     def eq(value, options={})
       [Redix.redis.hget(@hash_name, value)].compact
     end
-
-    def kind
-      "unique"
-    end
   end
+  register_index :unique, UniqueIndex
 
   class PrimaryKeyIndex < Index
     include Ordering
@@ -314,17 +316,8 @@ module Redix
     def eq(value, options)
       [value]
     end
-
-    def kind
-      "primary_key"
-    end
   end
-
-  INDEX_TYPES = {
-    primary_key: PrimaryKeyIndex,
-    multi: MultiIndex,
-    unique: UniqueIndex,
-  }
+  register_index :primary_key, PrimaryKeyIndex
 
   def self.redis
     unless @redis
