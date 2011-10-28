@@ -215,13 +215,20 @@ module Redix
 
     def score(object, value)
       if @order
-        object.send(@order)
+        value = object.send(@order)
+      end
+      case value
+      when Numeric
+        value
+      when Time
+        value.to_f
       else
-        case value
-        when Numeric
-          value
-        else
+        if value.respond_to?(:to_i)
           value.to_i
+        elsif value.respond_to?(:to_time)
+          value.to_time.to_f
+        else
+          raise UnorderableValue.new("Unable to convert #{value} in to a number for ordering.")
         end
       end
     end
@@ -346,4 +353,5 @@ module Redix
   class MissingPrimaryKeyError < StandardError; end
   class NotUniqueError < StandardError; end
   class RedisIndexingError < StandardError; end
+  class UnorderableValue < StandardError; end
 end
