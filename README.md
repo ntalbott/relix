@@ -118,6 +118,8 @@ The from option is exclusive - it does not return or count the key you pass to i
 
 ## Indexes
 
+Indexes are inherited up the ancestor chain, so you can for instance set the primary_key in a base class and then not have to re-declare it in each subclass.
+
 ### PrimaryKeyIndex
 
 The primary key index is the only index that is required on a model. Under the covers it is stored very similarly to a UniqueIndex, and it is stably sorted in insertion order. It is declared using #primary_key within the redix block:
