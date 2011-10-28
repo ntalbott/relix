@@ -34,4 +34,28 @@ class IndexingTest < RedixTest
       klass.new.index!
     end
   end
+
+  def test_error_indexing
+    bogus_index = Class.new(Redix::Index) do
+      def index(r, pk, object, value, old_value)
+        r.set('a', 'a')
+        r.hget('a', 'a')
+      end
+    end
+    Redix.register_index(:bogus, bogus_index)
+    klass = Class.new do
+      include Redix
+      redix do
+        primary_key :key
+        bogus :stuff
+      end
+      attr_accessor :key, :stuff
+    end
+    object = klass.new
+    object.key = 'a'
+    object.stuff = 'a'
+    assert_raise Redix::RedisIndexingError do
+      object.index!
+    end
+  end
 end

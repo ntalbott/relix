@@ -153,13 +153,15 @@ module Redix
               index.index(r, pk, object, value, old_value, *query_value)
             end
           end
-          result = r.multi do
+          r.multi do
             indexers.each do |indexer|
               indexer.call
             end
             r.hmset(current_values_name, *current_values.flatten)
+          end.each do |result|
+            raise RedisIndexingError.new(result.message) if Exception === result
           end
-          break if result
+          break
         end
       end
     end
@@ -343,4 +345,5 @@ module Redix
   class MissingIndexError < StandardError; end
   class MissingPrimaryKeyError < StandardError; end
   class NotUniqueError < StandardError; end
+  class RedisIndexingError < StandardError; end
 end
