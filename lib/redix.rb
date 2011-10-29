@@ -131,7 +131,7 @@ module Redix
       unless primary_key_index = indexes['primary_key']
         raise MissingPrimaryKeyError.new("You must declare a primary key for #{@klass.name}")
       end
-      pk = primary_key_index.read(object)
+      pk = primary_key_index.read_normalized(object)
       current_values_name = "#{key_prefix('current_values')}:#{pk}"
 
       Redix.redis do |r|
@@ -142,13 +142,13 @@ module Redix
           indexes.each do |name,index|
             ((watch = index.watch) && r.watch(*watch))
 
-            value = index.read(object)
+            value = index.read_normalized(object)
             old_value = current_values[name]
 
             next if value == old_value
             current_values[name] = value
 
-            next if index.skip?(r, pk, value)
+            next unless index.filter(r, object, value)
 
             query_value = index.query(r, value)
             indexers << proc do
@@ -189,8 +189,11 @@ module Redix
     end
 
     def read(object)
-      value = @accessor.inject({}){|h,e| h[e] = object.send(e); h}
-      normalize(value)
+      @accessor.inject({}){|h,e| h[e] = object.send(e); h}
+    end
+
+    def read_normalized(object)
+      normalize(read(object))
     end
 
     def normalize(value)
@@ -213,8 +216,8 @@ module Redix
       nil
     end
 
-    def skip?(r, pk, value)
-      false
+    def filter(r, object, value)
+      true
     end
 
     def query(r, value)
@@ -296,18 +299,24 @@ module Redix
       [@set_name, @hash_name]
     end
 
-    def skip?(r, pk, value)
+    def filter(r, object, value)
+      return true if read(object).values.any?{|e| e.nil?}
       if r.sismember(@set_name, value)
-        raise NotUniqueError.new("'#{value}'' is not unique in index #{@name}")
+        raise NotUniqueError.new("'#{value}' is not unique in index #{@name}")
       end
-      false
+      true
     end
 
     def index(r, pk, object, value, old_value)
-      r.hset(@hash_name, value, pk)
+      if read(object).values.all?{|e| !e.nil?}
+        r.hset(@hash_name, value, pk)
+        r.zadd(@sorted_set_name, score(object, value), pk)
+        r.sadd(@set_name, value)
+      else
+        r.zrem(@sorted_set_name, pk)
+        r.srem(@set_name, value)
+      end
       r.hdel(@hash_name, old_value)
-      r.zadd(@sorted_set_name, score(object, value), pk)
-      r.sadd(@set_name, value)
     end
 
     def all(options={})
@@ -327,8 +336,8 @@ module Redix
       @name
     end
 
-    def skip?(r, pk, value)
-      r.zrank(@name, pk)
+    def filter(r, object, value)
+      !r.zrank(@name, value)
     end
 
     def query(r, value)

@@ -34,5 +34,13 @@ class UniqueIndexTest < RedixTest
     end
     assert_equal ["1"], m.lookup{|q| q[:email].eq("fred@example.com")}
     assert_equal ["2"], m.lookup{|q| q[:email].eq("jane@example.com")}
+
+    assert_nothing_raised do
+      m.new("3", "")
+      m.new("1", nil)
+      m.new("2", nil)
+    end
+    assert_equal [], m.lookup{|q| q[:email].eq(nil)}
+    assert_equal [], m.lookup{|q| q[:email].eq("fred@example.com")}
   end
 end

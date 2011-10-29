@@ -174,5 +174,7 @@ Unique indexes will raise an error if the same value is indexed twice for a diff
       unique :email
     end
 
+Unique indexes ignore nil values - they will not be indexed and an error is not raised if there is more than one object with a value of nil. A multi-value unique index will be completely skipped if any value in it is nil.
+
 **Supported Operators**: eq, all
 **Ordering**: can be ordered on any numeric attribute (default is the to_i of the indexed value)
