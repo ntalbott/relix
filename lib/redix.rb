@@ -65,7 +65,7 @@ module Redix
       end
 
       def eq(value, options={})
-        @value = value
+        @value = @index.normalize(value)
         @options = options
       end
 
@@ -107,7 +107,7 @@ module Redix
 
     def add_index(index_type, name, options={})
       accessor = (options.delete(:on) || name)
-      @indexes[name.to_s] = Redix.index_types[index_type].new(accessor, key_prefix(name), options)
+      @indexes[name.to_s] = Redix.index_types[index_type].new(key_prefix(name), accessor, options)
     end
 
     def indexes
@@ -182,14 +182,31 @@ module Redix
   end
 
   class Index
-    def initialize(accessor, name, options={})
+    def initialize(name, accessor, options={})
       @name = "#{self.class.name}:#{name}"
-      @accessor = accessor
+      @accessor = [accessor].flatten.collect{|a| a.to_s}
       @options = options
     end
 
     def read(object)
-      object.send(@accessor)
+      value = @accessor.inject({}){|h,e| h[e] = object.send(e); h}
+      normalize(value)
+    end
+
+    def normalize(value)
+      value_hash = case value
+      when Hash
+        value.inject({}){|h, (k,v)| h[k.to_s] = v; h}
+      else
+        {@accessor.first => value}
+      end
+      @accessor.collect do |k|
+        if value_hash.include?(k)
+          value_hash[k].to_s
+        else
+          raise MissingIndexValue.new("Missing #{k} when looking up by #{@name}")
+        end
+      end.join(":")
     end
 
     def watch
@@ -229,8 +246,10 @@ module Redix
           value.to_i
         elsif value.respond_to?(:to_time)
           value.to_time.to_f
-        else
+        elsif @order
           raise UnorderableValue.new("Unable to convert #{value} in to a number for ordering.")
+        else
+          0
         end
       end
     end
@@ -356,4 +375,5 @@ module Redix
   class NotUniqueError < StandardError; end
   class RedisIndexingError < StandardError; end
   class UnorderableValue < StandardError; end
+  class MissingIndexValue < StandardError; end
 end

@@ -116,9 +116,31 @@ In addition, rather than an offset, an indexed object can be specified as a star
 
 The from option is exclusive - it does not return or count the key you pass to it.
 
-## Indexes
 
-Indexes are inherited up the ancestor chain, so you can for instance set the primary_key in a base class and then not have to re-declare it in each subclass.
+## Indexing
+
+### Inheritance
+
+Indexes are inherited up the Ruby ancestor chain, so you can for instance set the primary_key in a base class and then not have to re-declare it in each subclass.
+
+
+### Multiple Value Indexes
+
+Indexes can be built over multiple attributes:
+
+    redix do
+      multi :storage_state_by_account, on: %w(storage_state account_id)
+    end
+
+When there are multiple attributes, they are specified in a hash:
+
+    lookup do |q|
+      q[:storage_state_by_account].eq(
+        {storage_state: 'cached', account_id: 'bob'}, limit: 10)
+    end
+
+
+## Index Types
 
 ### PrimaryKeyIndex
 
@@ -131,6 +153,7 @@ The primary key index is the only index that is required on a model. Under the c
 **Supported Operators**: eq, all
 **Ordering**: insertion
 
+
 ### MultiIndex
 
 Multi indexes allow multiple matching primary keys per indexed value, and are ideal for one to many relationships. They can include an ordering, and are declared using #multi in the redix block:
@@ -141,6 +164,7 @@ Multi indexes allow multiple matching primary keys per indexed value, and are id
 
 **Supported Operators**: eq
 **Ordering**: can be ordered on any numeric attribute (default is the to_i of the indexed value)
+
 
 ### UniqueIndex
 

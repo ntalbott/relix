@@ -1,6 +1,27 @@
 require 'test_helper'
 
 class IndexingTest < RedixTest
+  def test_multi_value_index
+    klass = Class.new do
+      include Redix
+      redix do
+        primary_key :key
+        multi :name, on: %w(first last)
+      end
+      attr_accessor :key, :first, :last
+    end
+    object = klass.new
+    object.key = 1
+    object.first = "bob"
+    object.last = "smith"
+    object.index!
+    assert_equal ["1"], klass.lookup{|q| q[:name].eq(first: "bob", last: "smith")}
+    assert_equal [], klass.lookup{|q| q[:name].eq(first: "fred", last: "smith")}
+    assert_raise Redix::MissingIndexValue do
+      klass.lookup{|q| q[:name].eq(first: "bob")}
+    end
+  end
+
   def test_index_inheritance
     parent = Class.new do
       def self.name; "parent"; end
