@@ -280,7 +280,9 @@ module Redix
     end
 
     def position(pk, value)
-      Redix.redis.zrank(key_for(value), pk)
+      position = Redix.redis.zrank(key_for(value), pk)
+      raise MissingIndexValue, "Cannot find key #{pk} in index for #{value}" unless position
+      position
     end
   end
   register_index :multi, MultiIndex

@@ -16,6 +16,12 @@ class MultiIndexTest < RedixTest
     assert_equal %w(reuben annemarie), Person.lookup{|q| q[:family_key].eq(@talbott_family.key, from: "nathaniel", limit: 2)}
   end
 
+  def test_offset_by_missing_key
+    assert_raise Redix::MissingIndexValue do
+      Person.lookup{|q| q[:family_key].eq(@talbott_family.key, from: "bogus", limit: 2)}
+    end
+  end
+
   def test_limit_of_zero
     assert_equal [], Person.lookup{|q| q[:family_key].eq(@talbott_family.key, limit: 0)}
   end
