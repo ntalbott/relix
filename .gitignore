@@ -3,3 +3,4 @@ vendor/ruby
 Gemfile.lock
 *.rdb
 *.sublime-workspace
+*.gem
