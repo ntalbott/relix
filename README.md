@@ -27,6 +27,13 @@ Otherwise gem install:
 
     $ gem install relix
 
+You can configure the Redis host, port and db like so:
+
+    Relix.host = 'app-1'
+    Relix.port = 10000
+    Relix.db   = 5
+
+
 ## Usage
 
 To index something in a model, include the Relix module, declare the primary key (required), and declare any additional indexes you want:

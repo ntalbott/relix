@@ -1,3 +1,7 @@
+### 1.0.2
+
+    * Allow configuring the Redis host.
+
 ### 1.0.1
 
     * Add all the new files in lib to gemspec.
