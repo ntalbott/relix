@@ -43,4 +43,25 @@ class UniqueIndexTest < RedixTest
     assert_equal [], m.lookup{|q| q[:email].eq(nil)}
     assert_equal [], m.lookup{|q| q[:email].eq("fred@example.com")}
   end
+
+  def test_deindexing_old_values
+    m = Class.new do
+      include Redix
+      redix do
+        primary_key :key
+        unique :email
+      end
+      attr_accessor :key, :email
+    end
+    o = m.new
+    o.key = 'a'
+    o.email = 'bob@example.com'
+    o.index!
+    assert_equal ['a'], m.lookup{|q| q[:email].eq('bob@example.com')}
+
+    o.email = 'fred@example.com'
+    o.index!
+    assert_equal [], m.lookup{|q| q[:email].eq('bob@example.com')}
+    assert_equal ['a'], m.lookup{|q| q[:email].eq('fred@example.com')}
+  end
 end

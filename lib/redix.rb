@@ -292,18 +292,17 @@ module Redix
 
     def initialize(*args)
       super
-      @set_name = "#{@name}:set"
       @sorted_set_name = "#{@name}:zset"
       @hash_name = "#{@name}:hash"
     end
 
     def watch
-      [@set_name, @hash_name]
+      @hash_name
     end
 
     def filter(r, object, value)
       return true if read(object).values.any?{|e| e.nil?}
-      if r.sismember(@set_name, value)
+      if r.hexists(@hash_name, value)
         raise NotUniqueError.new("'#{value}' is not unique in index #{@name}")
       end
       true
@@ -313,10 +312,9 @@ module Redix
       if read(object).values.all?{|e| !e.nil?}
         r.hset(@hash_name, value, pk)
         r.zadd(@sorted_set_name, score(object, value), pk)
-        r.sadd(@set_name, value)
       else
+        r.hdel(@hash_name, value)
         r.zrem(@sorted_set_name, pk)
-        r.srem(@set_name, value)
       end
       r.hdel(@hash_name, old_value)
     end
