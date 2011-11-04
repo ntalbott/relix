@@ -1,8 +1,0 @@
-require 'redix/core'
-require 'redix/redis'
-require 'redix/query'
-require 'redix/index_set'
-require 'redix/index'
-require 'redix/indexes/multi'
-require 'redix/indexes/unique'
-require 'redix/indexes/primary_key'

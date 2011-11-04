@@ -1,4 +1,4 @@
-# Redix
+# Relix
 
 A Redis-backed indexing layer that can be used with any (or no) backend data storage.
 
@@ -6,12 +6,12 @@ A Redis-backed indexing layer that can be used with any (or no) backend data sto
 
 With the rise in popularity of non-relational databases, and the regular use of relational databases in non-relational ways, data indexing has become an aspect of data storage that you can't simply assume is handled for you. More and more applications are storing their data in databases that treat that stored data as opaque, and thus there's no query engine sitting on top of the data making sure that it can be quickly and flexibly looked up.
 
-Redix is a layer that can be added on to any model to make all the normal types of querying you want to do: equality, less than/greater than, in set, range, limit, etc., quick and painless. Redix depends on Redis to be awesome at what it does - blazingly fast operations on basic data types - and layers on top of that pluggable indexing of your data for fast lookup.
+Relix is a layer that can be added on to any model to make all the normal types of querying you want to do: equality, less than/greater than, in set, range, limit, etc., quick and painless. Relix depends on Redis to be awesome at what it does - blazingly fast operations on basic data types - and layers on top of that pluggable indexing of your data for fast lookup.
 
 ## Philosophy
 
 * Performance is paramount - be FAST.
-* Leverage Redis and its strengths to the hilt. Never do in Redix what could be done in Redis.
+* Leverage Redis and its strengths to the hilt. Never do in Relix what could be done in Redis.
 * Be extremely tolerant to failure.
 ** Since we can't guarantee atomicity with the backing datastore, index early and clean up later.
 ** Make continuous index repair easy since the chaos monkey could attack at any time.
@@ -19,24 +19,24 @@ Redix is a layer that can be added on to any model to make all the normal types 
 
 ## Installation
 
-If you're using bundler, add redix to your Gemfile:
+If you're using bundler, add Relix to your Gemfile:
 
-    gem 'redix'
+    gem 'relix'
 
 Otherwise gem install:
 
-    $ gem install redix
+    $ gem install relix
 
 ## Usage
 
-To index something in a model, include the Redix module, declare the primary key (required), and declare any additional indexes you want:
+To index something in a model, include the Relix module, declare the primary key (required), and declare any additional indexes you want:
 
     class Transaction
-      include Redix
+      include Relix
 
       attr_accessor :key, :account_key, :created_at
 
-      redix do
+      relix do
         primary_key :key
         multi :account_key, order: :created_at
         unique :by_created_at, on: :key, order: :created_at
@@ -87,11 +87,11 @@ Since the :primary_key index is ordered by insertion order, we've also declared 
 
 ## Querying
 
-Redix uses a simple query language based on method chaining. A "root" query is passed in to the lookup block, and then query terms are chained off of it:
+Relix uses a simple query language based on method chaining. A "root" query is passed in to the lookup block, and then query terms are chained off of it:
 
     class Person
-      include Redix
-      redix do
+      include Relix
+      relix do
         primary_key :key
         multi :name, order: :birthdate
       end
@@ -99,7 +99,7 @@ Redix uses a simple query language based on method chaining. A "root" query is p
 
     people = Person.lookup{|q| q[:name].eq("Bob Smith")}
 
-Basically you just specify an index and an operation against that index. In addition, you can specify options for the query, such as limit and offset, if supported by the index type. Redix only supports querying by a single index at a time.
+Basically you just specify an index and an operation against that index. In addition, you can specify options for the query, such as limit and offset, if supported by the index type. Relix only supports querying by a single index at a time.
 
 Any ordered index can also be offset and limited:
 
@@ -124,7 +124,7 @@ Indexes are inherited up the Ruby ancestor chain, so you can for instance set th
 
 Indexes can be built over multiple attributes:
 
-    redix do
+    relix do
       multi :storage_state_by_account, on: %w(storage_state account_id)
     end
 
@@ -140,9 +140,9 @@ When there are multiple attributes, they are specified in a hash:
 
 ### PrimaryKeyIndex
 
-The primary key index is the only index that is required on a model. Under the covers it is stored very similarly to a UniqueIndex, and it is stably sorted in insertion order. It is declared using #primary_key within the redix block:
+The primary key index is the only index that is required on a model. Under the covers it is stored very similarly to a UniqueIndex, and it is stably sorted in insertion order. It is declared using #primary_key within the relix block:
 
-    redix do
+    relix do
       primary_key :id
     end
 
@@ -152,9 +152,9 @@ The primary key index is the only index that is required on a model. Under the c
 
 ### MultiIndex
 
-Multi indexes allow multiple matching primary keys per indexed value, and are ideal for one to many relationships. They can include an ordering, and are declared using #multi in the redix block:
+Multi indexes allow multiple matching primary keys per indexed value, and are ideal for one to many relationships. They can include an ordering, and are declared using #multi in the relix block:
 
-    redix do
+    relix do
       multi :account_id, order: :created_at
     end
 
@@ -164,9 +164,9 @@ Multi indexes allow multiple matching primary keys per indexed value, and are id
 
 ### UniqueIndex
 
-Unique indexes will raise an error if the same value is indexed twice for a different primary key. They also provide super fast lookups. They are declared using #unique in the redix block:
+Unique indexes will raise an error if the same value is indexed twice for a different primary key. They also provide super fast lookups. They are declared using #unique in the relix block:
 
-    redix do
+    relix do
       unique :email
     end
 

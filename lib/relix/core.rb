@@ -1,4 +1,4 @@
-module Redix
+module Relix
   def self.included(klass)
     super
     klass.extend ClassMethods
@@ -13,25 +13,25 @@ module Redix
   end
 
   module ClassMethods
-    def redix(&block)
-      @redix ||= IndexSet.new(self)
+    def relix(&block)
+      @relix ||= IndexSet.new(self)
       if block_given?
-        @redix.instance_eval(&block)
+        @relix.instance_eval(&block)
       else
-        @redix
+        @relix
       end
     end
 
     def lookup(&block)
-      redix.lookup(&block)
+      relix.lookup(&block)
     end
   end
 
-  def redix
-    self.class.redix
+  def relix
+    self.class.relix
   end
 
   def index!
-    redix.index!(self)
+    relix.index!(self)
   end
 end

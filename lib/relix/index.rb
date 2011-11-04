@@ -1,4 +1,4 @@
-module Redix
+module Relix
   class Index
     def initialize(name, accessor, options={})
       @name = "#{self.class.name}:#{name}"

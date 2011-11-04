@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class MultiIndexTest < RedixTest
+class MultiIndexTest < RelixTest
   include FamilyFixture
 
   def setup
@@ -17,7 +17,7 @@ class MultiIndexTest < RedixTest
   end
 
   def test_offset_by_missing_key
-    assert_raise Redix::MissingIndexValueError do
+    assert_raise Relix::MissingIndexValueError do
       Person.lookup{|q| q[:family_key].eq(@talbott_family.key, from: "bogus", limit: 2)}
     end
   end

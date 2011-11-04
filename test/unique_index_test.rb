@@ -1,10 +1,10 @@
 require 'test_helper'
 
-class UniqueIndexTest < RedixTest
+class UniqueIndexTest < RelixTest
   def test_enforcement
     m = Class.new do
-      include Redix
-      redix do
+      include Relix
+      relix do
         primary_key :key
         unique :email
       end
@@ -17,7 +17,7 @@ class UniqueIndexTest < RedixTest
     end
     assert_equal ["1"], m.lookup{|q| q[:email].eq("bob@example.com")}
 
-    assert_raise(Redix::NotUniqueError) do
+    assert_raise(Relix::NotUniqueError) do
       m.new("2", "bob@example.com")
     end
     assert_equal ["1"], m.lookup{|q| q[:email].eq("bob@example.com")}
@@ -46,8 +46,8 @@ class UniqueIndexTest < RedixTest
 
   def test_deindexing_old_values
     m = Class.new do
-      include Redix
-      redix do
+      include Relix
+      relix do
         primary_key :key
         unique :email
       end

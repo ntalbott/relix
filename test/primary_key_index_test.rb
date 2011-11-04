@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class PrimaryKeyIndexTest < RedixTest
+class PrimaryKeyIndexTest < RelixTest
   include FamilyFixture
 
   def setup

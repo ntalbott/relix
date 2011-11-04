@@ -1,4 +1,4 @@
-module Redix
+module Relix
   class MultiIndex < Index
     include Ordering
 
@@ -8,11 +8,11 @@ module Redix
     end
 
     def eq(value, options={})
-      Redix.redis.zrange(key_for(value), *range_from_options(options, value))
+      Relix.redis.zrange(key_for(value), *range_from_options(options, value))
     end
 
     def position(pk, value)
-      position = Redix.redis.zrank(key_for(value), pk)
+      position = Relix.redis.zrank(key_for(value), pk)
       raise MissingIndexValueError, "Cannot find key #{pk} in index for #{value}" unless position
       position
     end

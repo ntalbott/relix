@@ -1,4 +1,4 @@
-require 'redix'
+require 'relix'
 
 require 'fixtures/family_fixture'
 
@@ -8,17 +8,17 @@ else
   pid = Process.spawn("redis-server #{File.expand_path('..', __FILE__)}/redis.conf", [:out, :err] => "/dev/null")
   at_exit{Process.kill("TERM", pid)}
 end
-Redix.port = 10000
+Relix.port = 10000
 
 require 'test/unit'
 
-class RedixTest < Test::Unit::TestCase
+class RelixTest < Test::Unit::TestCase
   def run(*args)
     shared_setup
     super
   end
 
   def shared_setup
-    Redix.redis.flushdb
+    Relix.redis.flushdb
   end
 end

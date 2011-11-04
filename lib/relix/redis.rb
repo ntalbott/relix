@@ -1,7 +1,7 @@
 require 'hiredis'
 require 'redis'
 
-module Redix
+module Relix
   def self.redis
     unless @redis
       @redis = ::Redis.new(port: @redis_port)

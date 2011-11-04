@@ -1,6 +1,6 @@
 class Family
-  include Redix
-  redix do
+  include Relix
+  relix do
     primary_key :key
   end
   attr_reader :key
@@ -11,8 +11,8 @@ class Family
 end
 
 class Person
-  include Redix
-  redix do
+  include Relix
+  relix do
     primary_key :key
     multi :family_key, order: :birthyear
     unique :by_birthyear, on: :key, order: :birthyear

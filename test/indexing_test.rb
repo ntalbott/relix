@@ -1,10 +1,10 @@
 require 'test_helper'
 
-class IndexingTest < RedixTest
+class IndexingTest < RelixTest
   def test_multi_value_index
     klass = Class.new do
-      include Redix
-      redix do
+      include Relix
+      relix do
         primary_key :key
         multi :name, on: %w(first last)
       end
@@ -17,7 +17,7 @@ class IndexingTest < RedixTest
     object.index!
     assert_equal ["1"], klass.lookup{|q| q[:name].eq(first: "bob", last: "smith")}
     assert_equal [], klass.lookup{|q| q[:name].eq(first: "fred", last: "smith")}
-    assert_raise Redix::MissingIndexValueError do
+    assert_raise Relix::MissingIndexValueError do
       klass.lookup{|q| q[:name].eq(first: "bob")}
     end
   end
@@ -25,8 +25,8 @@ class IndexingTest < RedixTest
   def test_index_inheritance
     parent = Class.new do
       def self.name; "parent"; end
-      include Redix
-      redix do
+      include Relix
+      relix do
         primary_key :key
         unique :email
       end
@@ -34,7 +34,7 @@ class IndexingTest < RedixTest
     end
     child = Class.new(parent) do
       def self.name; "child"; end
-      redix do
+      relix do
         unique :login
       end
       attr_accessor :login
@@ -49,24 +49,24 @@ class IndexingTest < RedixTest
 
   def test_missing_primary_key
     klass = Class.new do
-      include Redix
+      include Relix
     end
-    assert_raise Redix::MissingPrimaryKeyError do
+    assert_raise Relix::MissingPrimaryKeyError do
       klass.new.index!
     end
   end
 
   def test_error_indexing
-    bogus_index = Class.new(Redix::Index) do
+    bogus_index = Class.new(Relix::Index) do
       def index(r, pk, object, value, old_value)
         r.set('a', 'a')
         r.hget('a', 'a')
       end
     end
-    Redix.register_index(:bogus, bogus_index)
+    Relix.register_index(:bogus, bogus_index)
     klass = Class.new do
-      include Redix
-      redix do
+      include Relix
+      relix do
         primary_key :key
         bogus :stuff
       end
@@ -75,7 +75,7 @@ class IndexingTest < RedixTest
     object = klass.new
     object.key = 'a'
     object.stuff = 'a'
-    assert_raise Redix::RedisIndexingError do
+    assert_raise Relix::RedisIndexingError do
       object.index!
     end
   end

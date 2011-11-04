@@ -1,4 +1,4 @@
-module Redix
+module Relix
   class PrimaryKeyIndex < Index
     include Ordering
 
@@ -19,7 +19,7 @@ module Redix
     end
 
     def all(options={})
-      Redix.redis.zrange(@name, *range_from_options(options))
+      Relix.redis.zrange(@name, *range_from_options(options))
     end
 
     def eq(value, options)

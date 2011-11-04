@@ -2,7 +2,7 @@ require 'test_helper'
 
 require 'date'
 
-class OrderingTest < RedixTest
+class OrderingTest < RelixTest
   include FamilyFixture
 
   def setup
@@ -31,8 +31,8 @@ class OrderingTest < RedixTest
 
   def test_date_and_time_ordering
     klass = Class.new do
-      include Redix
-      redix do
+      include Relix
+      relix do
         primary_key :key
         multi :stuff, order: :created_at
       end
@@ -61,8 +61,8 @@ class OrderingTest < RedixTest
 
   def test_bad_ordering_value
     klass = Class.new do
-      include Redix
-      redix do
+      include Relix
+      relix do
         primary_key :key
         multi :stuff, order: :created_at
       end
@@ -72,7 +72,7 @@ class OrderingTest < RedixTest
     object.key = 'a'
     object.stuff = 'a'
     object.created_at = Object.new
-    assert_raise Redix::UnorderableValueError do
+    assert_raise Relix::UnorderableValueError do
       object.index!
     end
   end

@@ -1,4 +1,4 @@
-module Redix
+module Relix
   class UniqueIndex < Index
     include Ordering
 
@@ -32,11 +32,11 @@ module Redix
     end
 
     def all(options={})
-      Redix.redis.zrange(@sorted_set_name, *range_from_options(options))
+      Relix.redis.zrange(@sorted_set_name, *range_from_options(options))
     end
 
     def eq(value, options={})
-      [Redix.redis.hget(@hash_name, value)].compact
+      [Relix.redis.hget(@hash_name, value)].compact
     end
   end
   register_index :unique, UniqueIndex

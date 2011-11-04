@@ -1,4 +1,4 @@
-module Redix
+module Relix
   class Query
     def initialize(model)
       @model = model

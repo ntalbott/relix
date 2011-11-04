@@ -1,4 +1,4 @@
-module Redix
+module Relix
   class IndexSet
     def initialize(klass)
       @klass = klass
@@ -11,7 +11,7 @@ module Redix
     alias pk primary_key
 
     def method_missing(m, *args)
-      if Redix.index_types.keys.include?(m.to_sym)
+      if Relix.index_types.keys.include?(m.to_sym)
         add_index(m, *args)
       else
         super
@@ -20,7 +20,7 @@ module Redix
 
     def add_index(index_type, name, options={})
       accessor = (options.delete(:on) || name)
-      @indexes[name.to_s] = Redix.index_types[index_type].new(key_prefix(name), accessor, options)
+      @indexes[name.to_s] = Relix.index_types[index_type].new(key_prefix(name), accessor, options)
     end
 
     def indexes
@@ -47,7 +47,7 @@ module Redix
       pk = primary_key_index.read_normalized(object)
       current_values_name = "#{key_prefix('current_values')}:#{pk}"
 
-      Redix.redis do |r|
+      Relix.redis do |r|
         loop do
           r.watch current_values_name
           current_values = r.hgetall(current_values_name)
@@ -88,7 +88,7 @@ module Redix
     def parent
       unless @parent || @parent == false
         parent = @klass.superclass
-        @parent = (parent.respond_to?(:redix) ? parent.redix : false)
+        @parent = (parent.respond_to?(:relix) ? parent.relix : false)
       end
       @parent
     end

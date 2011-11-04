@@ -1,23 +1,23 @@
 require 'test_helper'
 
-class QueryingTest < RedixTest
+class QueryingTest < RelixTest
   include FamilyFixture
 
   def test_missing_index
     model = Class.new do
-      include Redix
-      redix.primary_key :key
+      include Relix
+      relix.primary_key :key
     end
-    assert_raise Redix::MissingIndexError do
+    assert_raise Relix::MissingIndexError do
       model.lookup{|q| q[:bogus].eq('something')}
     end
   end
 
   def test_missing_primary_key
     model = Class.new do
-      include Redix
+      include Relix
     end
-    assert_raise Redix::MissingPrimaryKeyError do
+    assert_raise Relix::MissingPrimaryKeyError do
       model.lookup
     end
   end

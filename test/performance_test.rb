@@ -1,10 +1,10 @@
 require 'test_helper'
 
-class PerformanceTest < RedixTest
+class PerformanceTest < RelixTest
   def test_multi_index
     m = Class.new do
-      include Redix
-      redix do
+      include Relix
+      relix do
         primary_key :key
         multi :thing
       end
@@ -29,8 +29,8 @@ class PerformanceTest < RedixTest
 
   def test_sorting
     m = Class.new do
-      include Redix
-      redix do
+      include Relix
+      relix do
         primary_key :key
         unique :sortme
       end
@@ -68,7 +68,7 @@ class PerformanceTest < RedixTest
   end
 
   def check_time(expected_ticks)
-    tick = (time{Redix.redis.echo("Tick")}/10)
+    tick = (time{Relix.redis.echo("Tick")}/10)
     actual_time = time{yield}
     actual_ticks = (actual_time / tick)
     [(actual_ticks < expected_ticks), actual_ticks, actual_time]
