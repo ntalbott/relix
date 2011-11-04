@@ -12,14 +12,20 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = ">= 1.8.6"
 
-  # If you have other dependencies, add them here
-  s.add_dependency "hiredis", "~> 0.3.2"
+  s.add_dependency "hiredis", "~> 0.4.1"
   s.add_dependency "redis", "~> 2.2.2"
 
-  # If you need to check in files that aren't .rb files, add them here
   s.files = %w(
     README.md
     lib/relix.rb
+    lib/relix/core.rb
+    lib/relix/index.rb
+    lib/relix/indexes/multi.rb
+    lib/relix/indexes/primary_key.rb
+    lib/relix/indexes/unique.rb
+    lib/relix/index_set.rb
+    lib/relix/query.rb
+    lib/relix/redis.rb
     lib/relix/version.rb
   )
   s.require_path = 'lib'
