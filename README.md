@@ -2,10 +2,6 @@
 
 A Redis-backed indexing layer that can be used with any (or no) backend data storage.
 
-## Big Fat Warning
-
-I'm using README-driven development and Redix is a work in progress - until Redix reaches 1.0.0 **this README may not reflect reality**.
-
 ## Rationale
 
 With the rise in popularity of non-relational databases, and the regular use of relational databases in non-relational ways, data indexing has become an aspect of data storage that you can't simply assume is handled for you. More and more applications are storing their data in databases that treat that stored data as opaque, and thus there's no query engine sitting on top of the data making sure that it can be quickly and flexibly looked up.
@@ -38,12 +34,12 @@ To index something in a model, include the Redix module, declare the primary key
     class Transaction
       include Redix
 
-      attr_accessor :key, :account_key, :amount, :created_at
+      attr_accessor :key, :account_key, :created_at
 
       redix do
         primary_key :key
         multi :account_key, order: :created_at
-        unique :by_amount, on: :key, order: :amount
+        unique :by_created_at, on: :key, order: :created_at
       end
 
       def initialize(key, account_key, created_at)
@@ -87,7 +83,7 @@ Which can be combined with offset and limit:
 
 Since the :primary_key index is ordered by insertion order, we've also declared a :by_created_at index on key that gives us the records ordered by the #created_at attribute:
 
-    p Transaction.lookup{|q| q[:by_created_at].all}  # => 
+    p Transaction.lookup{|q| q[:by_created_at].all}  # => [4,2,1,3]
 
 ## Querying
 
@@ -103,13 +99,13 @@ Redix uses a simple query language based on method chaining. A "root" query is p
 
     people = Person.lookup{|q| q[:name].eq("Bob Smith")}
 
-Basically you just specify an index, and an operation against that index. In addition, you can specify options for the query, such as limit and offset, if supported by the index type. Redix currently only supports querying by a single index at a time.
+Basically you just specify an index and an operation against that index. In addition, you can specify options for the query, such as limit and offset, if supported by the index type. Redix only supports querying by a single index at a time.
 
 Any ordered index can also be offset and limited:
 
     people = Person.lookup{|q| q[:name].eq("Bob Smith", offset: 5, limit: 5)}
 
-In addition, rather than an offset, an indexed object can be specified as a starting place using from:
+In addition, rather than an offset, an indexed primary key can be specified as a starting place using from:
 
     person_id = Person.lookup{|q| q[:name].eq("Bob Smith")[2]}
     people = Person.lookup{|q| q[:name].eq("Bob Smith", from: person_id)}

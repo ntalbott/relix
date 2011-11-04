@@ -72,7 +72,7 @@ class OrderingTest < RedixTest
     object.key = 'a'
     object.stuff = 'a'
     object.created_at = Object.new
-    assert_raise Redix::UnorderableValue do
+    assert_raise Redix::UnorderableValueError do
       object.index!
     end
   end

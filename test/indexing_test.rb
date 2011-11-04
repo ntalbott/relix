@@ -17,7 +17,7 @@ class IndexingTest < RedixTest
     object.index!
     assert_equal ["1"], klass.lookup{|q| q[:name].eq(first: "bob", last: "smith")}
     assert_equal [], klass.lookup{|q| q[:name].eq(first: "fred", last: "smith")}
-    assert_raise Redix::MissingIndexValue do
+    assert_raise Redix::MissingIndexValueError do
       klass.lookup{|q| q[:name].eq(first: "bob")}
     end
   end
