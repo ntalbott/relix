@@ -153,7 +153,7 @@ The primary key index is the only index that is required on a model. Under the c
       primary_key :id
     end
 
-**Supported Operators**: eq, all
+**Supported Operators**: eq, all  
 **Ordering**: insertion
 
 
@@ -165,7 +165,7 @@ Multi indexes allow multiple matching primary keys per indexed value, and are id
       multi :account_id, order: :created_at
     end
 
-**Supported Operators**: eq
+**Supported Operators**: eq  
 **Ordering**: can be ordered on any numeric attribute (default is the to_i of the indexed value)
 
 
@@ -179,5 +179,5 @@ Unique indexes will raise an error if the same value is indexed twice for a diff
 
 Unique indexes ignore nil values - they will not be indexed and an error is not raised if there is more than one object with a value of nil. A multi-value unique index will be completely skipped if any value in it is nil.
 
-**Supported Operators**: eq, all
+**Supported Operators**: eq, all  
 **Ordering**: can be ordered on any numeric attribute (default is the to_i of the indexed value)
