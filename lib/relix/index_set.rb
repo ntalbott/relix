@@ -72,28 +72,26 @@ module Relix
     end
 
     def index!(object)
-      unless primary_key_index = indexes['primary_key']
-        raise MissingPrimaryKeyError.new("You must declare a primary key for #{@klass.name}")
-      end
-      pk = primary_key_index.read_normalized(object)
+      pk = primary_key_for(object)
 
-      retries = 5
-      loop do
-        ops = index_ops(object, pk)
-        results = @redis.multi do
-          ops.each do |op|
-            op.call(pk)
-          end
-        end
-        if results
-          results.each do |result|
-            raise RedisIndexingError.new(result.message) if Exception === result
-          end
-          break
-        else
-          retries -= 1
-          raise ExceededRetriesForConcurrentWritesError.new if retries <= 0
-        end
+      handle_concurrent_modifications(pk) do
+        index_ops(object, pk)
+      end
+    end
+
+    def deindex!(object)
+      pk = primary_key_for(object)
+
+      handle_concurrent_modifications(pk) do
+        current_values_name = "#{key_prefix('current_values')}:#{pk}"
+        @redis.watch current_values_name
+        current_values = @redis.hgetall(current_values_name)
+
+        indexes.map do |name, index|
+          ((watch = index.watch) && @redis.watch(*watch))
+          old_value = current_values[name]
+          proc { index.deindex(@redis, pk, object, old_value) }
+        end.tap { |ops| ops << proc { @redis.del current_values_name } }
       end
     end
 
@@ -107,6 +105,38 @@ module Relix
         @parent = (parent.respond_to?(:relix) ? parent.relix : false)
       end
       @parent
+    end
+
+  private
+
+    def handle_concurrent_modifications(primary_key)
+      retries = 5
+      loop do
+        ops = yield
+
+        results = @redis.multi do
+          ops.each do |op|
+            op.call(primary_key)
+          end
+        end
+
+        if results
+          results.each do |result|
+            raise RedisIndexingError.new(result.message) if Exception === result
+          end
+          break
+        else
+          retries -= 1
+          raise ExceededRetriesForConcurrentWritesError.new if retries <= 0
+        end
+      end
+    end
+
+    def primary_key_for(object)
+      unless primary_key_index = indexes['primary_key']
+        raise MissingPrimaryKeyError.new("You must declare a primary key for #{@klass.name}")
+      end
+      primary_key_index.read_normalized(object)
     end
   end
 
