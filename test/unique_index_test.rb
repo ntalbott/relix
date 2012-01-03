@@ -59,5 +59,7 @@ class UniqueIndexTest < RelixTest
   def test_searching_for_nil
     o = @m.new('a', nil)
     assert_equal [], @m.lookup{|q| q[:email].eq(nil)}
+
+    assert_equal [], @m.lookup{|q| q[:email].eq(nil, limit: 1)}
   end
 end
