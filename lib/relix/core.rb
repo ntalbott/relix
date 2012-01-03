@@ -14,7 +14,7 @@ module Relix
 
   module ClassMethods
     def relix(&block)
-      @relix ||= IndexSet.new(self)
+      @relix ||= IndexSet.new(self, Relix.redis)
       if block_given?
         @relix.instance_eval(&block)
       else

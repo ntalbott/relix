@@ -1,7 +1,5 @@
 require 'relix'
 
-require 'fixtures/family_fixture'
-
 if `redis-cli -p 10000 PING 2>&1` =~ /PONG/
   raise "Redis is already running!"
 else
@@ -11,6 +9,8 @@ end
 Relix.port = 10000
 
 require 'test/unit'
+
+require 'fixtures/family_fixture'
 
 class RelixTest < Test::Unit::TestCase
   def run(*args)

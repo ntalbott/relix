@@ -8,11 +8,11 @@ module Relix
     end
 
     def eq(value, options={})
-      Relix.redis.zrange(key_for(value), *range_from_options(options, value))
+      @set.redis.zrange(key_for(value), *range_from_options(options, value))
     end
 
     def position(pk, value)
-      position = Relix.redis.zrank(key_for(value), pk)
+      position = @set.redis.zrank(key_for(value), pk)
       raise MissingIndexValueError, "Cannot find key #{pk} in index for #{value}" unless position
       position
     end

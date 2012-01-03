@@ -1,7 +1,9 @@
 module Relix
   class IndexSet
-    def initialize(klass)
+    attr_accessor :redis
+    def initialize(klass, redis)
       @klass = klass
+      @redis = redis
       @indexes = Hash.new
     end
 
@@ -20,7 +22,7 @@ module Relix
 
     def add_index(index_type, name, options={})
       accessor = (options.delete(:on) || name)
-      @indexes[name.to_s] = Relix.index_types[index_type].new(key_prefix(name), accessor, options)
+      @indexes[name.to_s] = Relix.index_types[index_type].new(self, key_prefix(name), accessor, options)
     end
 
     def indexes
@@ -47,36 +49,41 @@ module Relix
       pk = primary_key_index.read_normalized(object)
       current_values_name = "#{key_prefix('current_values')}:#{pk}"
 
-      Relix.redis do |r|
-        loop do
-          r.watch current_values_name
-          current_values = r.hgetall(current_values_name)
-          indexers = []
-          indexes.each do |name,index|
-            ((watch = index.watch) && r.watch(*watch))
+      retries = 5
+      loop do
+        @redis.watch current_values_name
+        current_values = @redis.hgetall(current_values_name)
+        indexers = []
+        indexes.each do |name,index|
+          ((watch = index.watch) && @redis.watch(*watch))
 
-            value = index.read_normalized(object)
-            old_value = current_values[name]
+          value = index.read_normalized(object)
+          old_value = current_values[name]
 
-            next if value == old_value
-            current_values[name] = value
+          next if value == old_value
+          current_values[name] = value
 
-            next unless index.filter(r, object, value)
+          next unless index.filter(@redis, object, value)
 
-            query_value = index.query(r, value)
-            indexers << proc do
-              index.index(r, pk, object, value, old_value, *query_value)
-            end
+          query_value = index.query(@redis, value)
+          indexers << proc do
+            index.index(@redis, pk, object, value, old_value, *query_value)
           end
-          r.multi do
-            indexers.each do |indexer|
-              indexer.call
-            end
-            r.hmset(current_values_name, *current_values.flatten)
-          end.each do |result|
+        end
+        results = @redis.multi do
+          indexers.each do |indexer|
+            indexer.call
+          end
+          @redis.hmset(current_values_name, *current_values.flatten)
+        end
+        if results
+          results.each do |result|
             raise RedisIndexingError.new(result.message) if Exception === result
           end
           break
+        else
+          retries -= 1
+          raise ExceededRetriesForConcurrentWritesError.new if retries <= 0
         end
       end
     end
@@ -96,4 +103,5 @@ module Relix
 
   class MissingPrimaryKeyError < StandardError; end
   class RedisIndexingError < StandardError; end
+  class ExceededRetriesForConcurrentWritesError < StandardError; end
 end
