@@ -22,19 +22,19 @@ class KeyingTest < RelixTest
     assert_equal "TestModel:name", @m.relix.key_prefix("name")
 
     assert_equal "Relix::PrimaryKeyIndex:TestModel:primary_key",
-      @m.relix.indexes['primary_key'].instance_eval{@name}
+      @m.relix.primary_key_index.name
 
     assert_equal "Relix::UniqueIndex:TestModel:email",
-      @m.relix.indexes['email'].instance_eval{@name}
+      @m.relix.indexes['email'].name
     assert_equal "Relix::UniqueIndex:TestModel:email:hash",
-      @m.relix.indexes['email'].instance_eval{@hash_name}
+      @m.relix.indexes['email'].hash_name
     assert_equal "Relix::UniqueIndex:TestModel:email:zset",
-      @m.relix.indexes['email'].instance_eval{@sorted_set_name}
+      @m.relix.indexes['email'].sorted_set_name
 
     assert_equal "Relix::MultiIndex:TestModel:parent:fred",
       @m.relix.indexes['parent'].key_for('fred')
     assert_equal "Relix::MultiIndex:TestModel:parent",
-      @m.relix.indexes['parent'].instance_eval{@name}
+      @m.relix.indexes['parent'].name
   end
 
   def test_standard_keys
@@ -42,19 +42,19 @@ class KeyingTest < RelixTest
 
     assert_equal "TestModel:values:1", @m.relix.current_values_name("1")
 
-    assert_equal "TestModel:primary_key",
-      @m.relix.indexes['primary_key'].instance_eval{@name}
+    assert_equal "TestModel:key:primary_key",
+      @m.relix.primary_key_index.name
 
     assert_equal "TestModel:email:unique",
-      @m.relix.indexes['email'].instance_eval{@name}
+      @m.relix.indexes['email'].name
     assert_equal "TestModel:email:unique:lookup",
-      @m.relix.indexes['email'].instance_eval{@hash_name}
+      @m.relix.indexes['email'].hash_name
     assert_equal "TestModel:email:unique:ordering",
-      @m.relix.indexes['email'].instance_eval{@sorted_set_name}
+      @m.relix.indexes['email'].sorted_set_name
 
     assert_equal "TestModel:parent:multi:fred",
       @m.relix.indexes['parent'].key_for('fred')
     assert_equal "TestModel:parent:multi",
-      @m.relix.indexes['parent'].instance_eval{@name}
+      @m.relix.indexes['parent'].name
   end
 end

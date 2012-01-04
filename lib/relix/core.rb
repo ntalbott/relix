@@ -8,8 +8,8 @@ module Relix
     @index_types ||= {}
   end
 
-  def self.register_index(name, index)
-    index_types[name.to_sym] = index
+  def self.register_index(index)
+    index_types[index.kind.to_sym] = index
   end
 
   module ClassMethods

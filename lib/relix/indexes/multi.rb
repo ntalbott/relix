@@ -18,8 +18,8 @@ module Relix
     end
 
     def key_for(value)
-      "#{@name}:#{value}"
+      "#{name}:#{value}"
     end
   end
-  register_index :multi, MultiIndex
+  register_index MultiIndex
 end

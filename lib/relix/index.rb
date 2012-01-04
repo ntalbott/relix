@@ -1,10 +1,18 @@
 module Relix
   class Index
-    def initialize(set, name, accessor, options={})
+    def self.kind
+      @kind ||= name.gsub(/(?:^.+::|Index$)/, '').gsub(/([a-z])([A-Z])/){"#{$1}_#{$2}"}.downcase
+    end
+
+    def initialize(set, base_name, accessor, options={})
       @set = set
-      @name = "#{self.class.name}:#{name}"
+      @base_name = base_name
       @accessor = [accessor].flatten.collect{|a| a.to_s}
       @options = options
+    end
+
+    def name
+      @name ||= @set.keyer.index(self, @base_name)
     end
 
     def read(object)
@@ -26,7 +34,7 @@ module Relix
         if value_hash.include?(k)
           value_hash[k].to_s
         else
-          raise MissingIndexValueError, "Missing #{k} when looking up by #{@name}"
+          raise MissingIndexValueError, "Missing #{k} when looking up by #{name}"
         end
       end.join(":")
     end

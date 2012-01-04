@@ -62,8 +62,11 @@ class IndexingTest < RelixTest
         r.set('a', 'a')
         r.hget('a', 'a')
       end
+      def self.name
+        "BogusIndex"
+      end
     end
-    Relix.register_index(:bogus, bogus_index)
+    Relix.register_index(bogus_index)
     klass = Class.new do
       include Relix
       relix do
