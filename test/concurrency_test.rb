@@ -11,7 +11,7 @@ class ConcurrencyTest < RelixTest
       attr_accessor :key, :thing
       def initialize(key, thing); @key, @thing = key, thing; index!; end
     end
-    @m.relix.instance_eval{@redis = RedisWrapper.new(@redis)}
+    @m.relix.redis = RedisWrapper.new(@m.relix.redis)
   end
 
   def test_value_changes_mid_indexing
@@ -22,7 +22,7 @@ class ConcurrencyTest < RelixTest
 
     model.relix.redis.before(:multi) do
       fork do
-        model.relix.instance_eval{@redis = Relix.new_redis_client}
+        model.relix.redis = Relix.new_redis_client
         model.thing = "value two"
         model.index!
         assert_equal %w(1), @m.lookup{|q| q[:thing].eq("value two")}
@@ -46,7 +46,7 @@ class ConcurrencyTest < RelixTest
 
     create_conflict = proc do
       fork do
-        model.relix.instance_eval{@redis = Relix.new_redis_client}
+        model.relix.redis = Relix.new_redis_client
         model.thing = "value two"
         model.index!
       end
