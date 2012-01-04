@@ -19,7 +19,7 @@ module Relix
     end
 
     def all(options={})
-      Relix.redis.zrange(@name, *range_from_options(options))
+      @set.redis.zrange(@name, *range_from_options(options))
     end
 
     def eq(value, options)

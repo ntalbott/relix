@@ -1,6 +1,7 @@
 module Relix
   class Index
-    def initialize(name, accessor, options={})
+    def initialize(set, name, accessor, options={})
+      @set = set
       @name = "#{self.class.name}:#{name}"
       @accessor = [accessor].flatten.collect{|a| a.to_s}
       @options = options
@@ -85,6 +86,6 @@ module Relix
     end
   end
 
-  class UnorderableValueError < StandardError; end
-  class MissingIndexValueError < StandardError; end
+  class UnorderableValueError < Relix::Error; end
+  class MissingIndexValueError < Relix::Error; end
 end
