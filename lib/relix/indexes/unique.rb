@@ -32,11 +32,11 @@ module Relix
     end
 
     def all(options={})
-      @set.zrange(@sorted_set_name, *range_from_options(options))
+      @set.redis.zrange(@sorted_set_name, *range_from_options(options))
     end
 
     def eq(value, options={})
-      [@set.hget(@hash_name, value)].compact
+      [@set.redis.hget(@hash_name, value)].compact
     end
   end
   register_index :unique, UniqueIndex

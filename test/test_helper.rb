@@ -1,14 +1,10 @@
-require 'relix'
-
-if `redis-cli -p 10000 PING 2>&1` =~ /PONG/
-  raise "Redis is already running!"
-else
-  pid = Process.spawn("redis-server #{File.expand_path('..', __FILE__)}/redis.conf", [:out, :err] => "/dev/null")
-  at_exit{Process.kill("TERM", pid)}
-end
-Relix.port = 10000
+system("redis-cli -p 10000 SHUTDOWN 2>&1") if(`redis-cli -p 10000 PING 2>&1` =~ /PONG/)
+system("redis-server #{File.expand_path('..', __FILE__)}/redis.conf")
 
 require 'test/unit'
+
+require 'relix'
+Relix.port = 10000
 
 require 'fixtures/family_fixture'
 
@@ -20,5 +16,7 @@ class RelixTest < Test::Unit::TestCase
 
   def shared_setup
     Relix.redis.flushdb
+  rescue Errno::ECONNREFUSED
+    warn "Unable to connect to redis so db was not flushed."
   end
 end
