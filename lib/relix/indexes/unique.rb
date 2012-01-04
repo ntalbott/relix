@@ -32,14 +32,14 @@ module Relix
     end
 
     def all(options={})
-      Relix.redis.zrange(@sorted_set_name, *range_from_options(options))
+      @set.redis.zrange(@sorted_set_name, *range_from_options(options))
     end
 
     def eq(value, options={})
-      [Relix.redis.hget(@hash_name, value)].compact
+      [@set.redis.hget(@hash_name, value)].compact
     end
   end
   register_index :unique, UniqueIndex
 
-  class NotUniqueError < StandardError; end
+  class NotUniqueError < Relix::Error; end
 end

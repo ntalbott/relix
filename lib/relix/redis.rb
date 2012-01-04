@@ -4,13 +4,18 @@ require 'redis'
 module Relix
   def self.redis
     unless @redis
-      @redis = ::Redis.new(host: @redis_host, port: @redis_port)
-      @redis.select @redis_db if @redis_db
+      @redis = new_redis_client
     end
     if block_given?
       yield(@redis)
     else
       @redis
+    end
+  end
+
+  def self.new_redis_client
+    ::Redis.new(host: @redis_host, port: @redis_port).tap do |client|
+      client.select @redis_db if @redis_db
     end
   end
 

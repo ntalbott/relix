@@ -47,5 +47,5 @@ module Relix
     end
   end
 
-  class MissingIndexError < StandardError; end
+  class MissingIndexError < Relix::Error; end
 end
