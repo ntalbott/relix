@@ -42,39 +42,48 @@ module Relix
       end
     end
 
+    def index_ops(object, pk)
+      current_values_name = "#{key_prefix('current_values')}:#{pk}"
+      @redis.watch current_values_name
+      current_values = @redis.hgetall(current_values_name)
+
+      ops = indexes.collect do |name,index|
+        ((watch = index.watch) && @redis.watch(*watch))
+
+        value = index.read_normalized(object)
+        old_value = current_values[name]
+
+        next if value == old_value
+        current_values[name] = value
+
+        next unless index.filter(@redis, object, value)
+
+        query_value = index.query(@redis, value)
+        proc do
+          index.index(@redis, pk, object, value, old_value, *query_value)
+        end
+      end.compact
+
+      ops << proc do
+        @redis.hmset(current_values_name, *current_values.flatten)
+      end
+
+      ops
+    end
+
     def index!(object)
       unless primary_key_index = indexes['primary_key']
         raise MissingPrimaryKeyError.new("You must declare a primary key for #{@klass.name}")
       end
       pk = primary_key_index.read_normalized(object)
-      current_values_name = "#{key_prefix('current_values')}:#{pk}"
 
       retries = 5
       loop do
-        @redis.watch current_values_name
-        current_values = @redis.hgetall(current_values_name)
-        indexers = []
-        indexes.each do |name,index|
-          ((watch = index.watch) && @redis.watch(*watch))
-
-          value = index.read_normalized(object)
-          old_value = current_values[name]
-
-          next if value == old_value
-          current_values[name] = value
-
-          next unless index.filter(@redis, object, value)
-
-          query_value = index.query(@redis, value)
-          indexers << proc do
-            index.index(@redis, pk, object, value, old_value, *query_value)
-          end
-        end
+        ops = index_ops(object, pk)
         results = @redis.multi do
-          indexers.each do |indexer|
-            indexer.call
+          ops.each do |op|
+            op.call(pk)
           end
-          @redis.hmset(current_values_name, *current_values.flatten)
         end
         if results
           results.each do |result|
