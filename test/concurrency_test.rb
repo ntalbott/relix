@@ -11,7 +11,7 @@ class ConcurrencyTest < RelixTest
       attr_accessor :key, :thing
       def initialize(key, thing); @key, @thing = key, thing; index!; end
     end
-    @m.relix.instance_eval{@redis = PausableRedis.new(@redis)}
+    @m.relix.instance_eval{@redis = RedisWrapper.new(@redis)}
   end
 
   def test_value_changes_mid_indexing
@@ -20,7 +20,7 @@ class ConcurrencyTest < RelixTest
 
     model.thing = "value one"
 
-    pause_indexing(model) do
+    model.relix.redis.before(:multi) do
       fork do
         model.relix.instance_eval{@redis = Relix.new_redis_client}
         model.thing = "value two"
@@ -31,32 +31,65 @@ class ConcurrencyTest < RelixTest
       end
       Process.wait
     end
+
+    model.index!
     assert_equal %w(1), @m.lookup{|q| q[:thing].eq("value one")}
     assert_not_equal %w(1), @m.lookup{|q| q[:thing].eq("original")}
     assert_not_equal %w(1), @m.lookup{|q| q[:thing].eq("value two")}
   end
 
-  class PausableRedis
-    def initialize(wrapped)
-      @wrapped = wrapped
-      @pauses = {}
+  def test_value_changes_mid_indexing_unrecoverably
+    model = @m.new(1, "original")
+    assert_equal %w(1), @m.lookup{|q| q[:thing].eq("original")}
+
+    model.thing = "value one"
+
+    create_conflict = proc do
+      fork do
+        model.relix.instance_eval{@redis = Relix.new_redis_client}
+        model.thing = "value two"
+        model.index!
+      end
+      Process.wait
+      model.relix.redis.after(:multi) do
+        model.relix.redis.before(:multi, &create_conflict)
+      end
+    end
+    model.relix.redis.before(:multi, &create_conflict)
+
+    assert_raise(Relix::ExceededRetriesForConcurrentWritesError) do
+      model.index!
     end
 
-    def pause(method, while_paused)
-      @pauses[method.to_sym] = while_paused
+    assert_equal %w(1), @m.lookup{|q| q[:thing].eq("value two")}
+    assert_not_equal %w(1), @m.lookup{|q| q[:thing].eq("original")}
+    assert_not_equal %w(1), @m.lookup{|q| q[:thing].eq("value one")}
+  end
+
+  class RedisWrapper
+    def initialize(wrapped)
+      @wrapped = wrapped
+      @befores = {}
+      @afters = {}
+    end
+
+    def before(method, &before)
+      @befores[method.to_sym] = before
+    end
+
+    def after(method, &after)
+      @afters[method.to_sym] = after
     end
 
     def method_missing(m, *args, &block)
-      if @pauses[m]
-        while_paused, @pauses[m] = @pauses[m], nil
-        while_paused.call
+      if @befores[m]
+        @befores.delete(m).call
       end
-      @wrapped.send(m, *args, &block)
+      r = @wrapped.send(m, *args, &block)
+      if @afters[m]
+        @afters.delete(m).call
+      end
+      r
     end
-  end
-
-  def pause_indexing(model, &block)
-    model.relix.redis.pause(:multi, block)
-    model.index!
   end
 end
