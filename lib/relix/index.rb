@@ -43,10 +43,6 @@ module Relix
       nil
     end
 
-    def key_for(value)
-      "#{@name}:#{value}"
-    end
-
     module Ordering
       def initialize(*args)
         super

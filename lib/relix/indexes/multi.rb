@@ -16,6 +16,10 @@ module Relix
       raise MissingIndexValueError, "Cannot find key #{pk} in index for #{value}" unless position
       position
     end
+
+    def key_for(value)
+      "#{@name}:#{value}"
+    end
   end
   register_index :multi, MultiIndex
 end

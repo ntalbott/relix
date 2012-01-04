@@ -1,4 +1,5 @@
 require 'relix/core'
+require 'relix/keyer'
 require 'relix/redis'
 require 'relix/query'
 require 'relix/index_set'

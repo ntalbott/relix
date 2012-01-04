@@ -5,12 +5,17 @@ module Relix
       @klass = klass
       @redis = redis
       @indexes = Hash.new
+      @keyer = Keyer.default_for(@klass)
     end
 
     def primary_key(accessor)
       add_index(:primary_key, 'primary_key', on: accessor)
     end
     alias pk primary_key
+
+    def keyer(value)
+      @keyer = value.new(@klass)
+    end
 
     def method_missing(m, *args)
       if Relix.index_types.keys.include?(m.to_sym)
@@ -43,7 +48,7 @@ module Relix
     end
 
     def index_ops(object, pk)
-      current_values_name = "#{key_prefix('current_values')}:#{pk}"
+      current_values_name = current_values_name(pk)
       @redis.watch current_values_name
       current_values = @redis.hgetall(current_values_name)
 
@@ -95,6 +100,10 @@ module Relix
           raise ExceededRetriesForConcurrentWritesError.new if retries <= 0
         end
       end
+    end
+
+    def current_values_name(pk)
+      @keyer.values(pk)
     end
 
     def key_prefix(name)
