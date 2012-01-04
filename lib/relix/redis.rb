@@ -14,9 +14,9 @@ module Relix
   end
 
   def self.new_redis_client
-    client = ::Redis.new(host: @redis_host, port: @redis_port)
-    client.select @redis_db if @redis_db
-    client
+    ::Redis.new(host: @redis_host, port: @redis_port).tap do |client|
+      client.select @redis_db if @redis_db
+    end
   end
 
   def self.host=(value)
