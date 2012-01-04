@@ -24,9 +24,9 @@ module Relix
       @primary_key_index
     end
 
-    def keyer(value=nil)
+    def keyer(value=nil, options={})
       if value
-        @keyer = value.new(@klass)
+        @keyer = value.new(@klass, options)
       else
         @keyer
       end

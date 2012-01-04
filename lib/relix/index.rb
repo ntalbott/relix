@@ -4,6 +4,10 @@ module Relix
       @kind ||= name.gsub(/(?:^.+::|Index$)/, '').gsub(/([a-z])([A-Z])/){"#{$1}_#{$2}"}.downcase
     end
 
+    def self.compact_kind
+      @compact_kind ||= kind[0..0]
+    end
+
     def initialize(set, base_name, accessor, options={})
       @set = set
       @base_name = base_name
@@ -12,7 +16,7 @@ module Relix
     end
 
     def name
-      @name ||= @set.keyer.index(self, @base_name)
+      @set.keyer.index(self, @base_name)
     end
 
     def read(object)

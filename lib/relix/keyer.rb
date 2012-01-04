@@ -1,11 +1,20 @@
 module Relix
+  def self.default_keyer(keyer=nil, options={})
+    if keyer
+      @default_keyer ||= [keyer, options]
+    else
+      @default_keyer
+    end
+  end
+
   module Keyer
     def self.default_for(klass)
-      Legacy.new(klass)
+      dk = Relix.default_keyer
+      dk.first.new(klass, dk.last)
     end
 
     class Legacy
-      def initialize(klass)
+      def initialize(klass, options)
         @prefix = klass.name
       end
 
@@ -23,13 +32,15 @@ module Relix
       end
 
       def component(name, component)
-        component = case component
-        when 'lookup'
-          'hash'
-        when 'ordering'
-          'zset'
-        else
-          component
+        if name =~ /^Relix::UniqueIndex:/
+          component = case component
+          when 'lookup'
+            'hash'
+          when 'ordering'
+            'zset'
+          else
+            component
+          end
         end
 
         "#{name}:#{component}"
@@ -37,7 +48,7 @@ module Relix
     end
 
     class Standard
-      def initialize(klass)
+      def initialize(klass, options)
         @prefix = klass.name
       end
 
@@ -53,5 +64,37 @@ module Relix
         "#{name}:#{component}"
       end
     end
+
+    class Compact < Standard
+      def initialize(klass, options)
+        @prefix = if(abbrev = options[:abbrev])
+          (abbrev.respond_to?(:call) ? abbrev.call(klass.name) : abbrev)
+        else
+          klass.name
+        end
+      end
+
+      def values(pk)
+        "#{@prefix}:v:#{pk}"
+      end
+
+      def index(index, name)
+        "#{@prefix}:#{name}:#{index.class.compact_kind}"
+      end
+    end
+
+    class Migrator
+      def initialize(klass, options)
+        @from = init_keyer(options[:from], klass)
+        @to = init_keyer(options[:to], klass)
+      end
+
+      def init_keyer(details, klass)
+        array = Array(details)
+        array.first.new(klass, (array[1] || {}))
+      end
+    end
   end
+
+  default_keyer(Keyer::Legacy)
 end

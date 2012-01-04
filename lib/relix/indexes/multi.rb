@@ -18,7 +18,7 @@ module Relix
     end
 
     def key_for(value)
-      "#{name}:#{value}"
+      @set.keyer.component(name, value)
     end
   end
   register_index MultiIndex

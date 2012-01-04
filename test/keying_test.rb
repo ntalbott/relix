@@ -57,4 +57,61 @@ class KeyingTest < RelixTest
     assert_equal "TestModel:parent:multi",
       @m.relix.indexes['parent'].name
   end
+
+  def test_compact_keys_with_string
+    @m.relix.keyer(Relix::Keyer::Compact, abbrev: "TM")
+
+    assert_equal "TM:v:1", @m.relix.current_values_name("1")
+
+    assert_equal "TM:key:p",
+      @m.relix.primary_key_index.name
+
+    assert_equal "TM:email:u",
+      @m.relix.indexes['email'].name
+    assert_equal "TM:email:u:lookup",
+      @m.relix.indexes['email'].hash_name
+    assert_equal "TM:email:u:ordering",
+      @m.relix.indexes['email'].sorted_set_name
+
+    assert_equal "TM:parent:m:fred",
+      @m.relix.indexes['parent'].key_for('fred')
+    assert_equal "TM:parent:m",
+      @m.relix.indexes['parent'].name
+  end
+
+  def test_compact_keys_with_proc
+    @m.relix.keyer(Relix::Keyer::Compact, abbrev: proc do |model_name|
+      model_name[0..2]
+    end)
+
+    assert_equal "Tes:v:1", @m.relix.current_values_name("1")
+
+    assert_equal "Tes:key:p",
+      @m.relix.primary_key_index.name
+
+    assert_equal "Tes:email:u",
+      @m.relix.indexes['email'].name
+    assert_equal "Tes:email:u:lookup",
+      @m.relix.indexes['email'].hash_name
+    assert_equal "Tes:email:u:ordering",
+      @m.relix.indexes['email'].sorted_set_name
+
+    assert_equal "Tes:parent:m:fred",
+      @m.relix.indexes['parent'].key_for('fred')
+    assert_equal "Tes:parent:m",
+      @m.relix.indexes['parent'].name
+  end
+
+  def test_key_migration
+    @m.relix.keyer(Relix::Keyer::Legacy)
+    @m.new(1, "bob@example.com", "fred")
+    @m.new(2, "kate@example.com", "fred")
+
+    @m.relix.keyer(Relix::Keyer::Migrator,
+      from: Relix::Keyer::Legacy,
+      to: Relix::Keyer::Compact)
+
+    assert_equal %w(1), @m.lookup{|q| q[:email].eq("bob@example.com")}
+    assert_equal %w(1 2), @m.lookup{|q| q[:parent].eq("fred")}
+  end
 end

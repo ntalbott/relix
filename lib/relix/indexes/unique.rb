@@ -3,13 +3,11 @@ module Relix
     include Ordering
 
     def sorted_set_name
-      "#{name}:zset"
-      @sorted_set_name ||= @set.keyer.component(name, 'ordering')
+      @set.keyer.component(name, 'ordering')
     end
 
     def hash_name
-      "#{name}:hash"
-      @hash_name ||= @set.keyer.component(name, 'lookup')
+      @set.keyer.component(name, 'lookup')
     end
 
     def watch
