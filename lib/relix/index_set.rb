@@ -110,7 +110,7 @@ module Relix
     end
   end
 
-  class MissingPrimaryKeyError < StandardError; end
-  class RedisIndexingError < StandardError; end
-  class ExceededRetriesForConcurrentWritesError < StandardError; end
+  class MissingPrimaryKeyError < Relix::Error; end
+  class RedisIndexingError < Relix::Error; end
+  class ExceededRetriesForConcurrentWritesError < Relix::Error; end
 end

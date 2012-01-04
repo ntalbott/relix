@@ -86,6 +86,6 @@ module Relix
     end
   end
 
-  class UnorderableValueError < StandardError; end
-  class MissingIndexValueError < StandardError; end
+  class UnorderableValueError < Relix::Error; end
+  class MissingIndexValueError < Relix::Error; end
 end

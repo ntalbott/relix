@@ -41,5 +41,5 @@ module Relix
   end
   register_index :unique, UniqueIndex
 
-  class NotUniqueError < StandardError; end
+  class NotUniqueError < Relix::Error; end
 end
