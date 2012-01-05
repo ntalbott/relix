@@ -65,6 +65,11 @@ module Relix
         if @order
           value = object.send(@order)
         end
+
+        score_for_value(value)
+      end
+
+      def score_for_value(value)
         case value
         when Numeric
           value
