@@ -5,12 +5,32 @@ module Relix
       @klass = klass
       @redis = redis
       @indexes = Hash.new
+      @keyer = Keyer.default_for(@klass)
     end
 
     def primary_key(accessor)
-      add_index(:primary_key, 'primary_key', on: accessor)
+      @primary_key_index = add_index(:primary_key, accessor)
     end
     alias pk primary_key
+
+    def primary_key_index
+      unless @primary_key_index
+        if parent
+          @primary_key_index = parent.primary_key_index
+        else
+          raise MissingPrimaryKeyError.new("You must declare a primary key for #{@klass.name}")
+        end
+      end
+      @primary_key_index
+    end
+
+    def keyer(value=nil, options={})
+      if value
+        @keyer = value.new(@klass, options)
+      else
+        @keyer
+      end
+    end
 
     def method_missing(m, *args)
       if Relix.index_types.keys.include?(m.to_sym)
@@ -22,7 +42,7 @@ module Relix
 
     def add_index(index_type, name, options={})
       accessor = (options.delete(:on) || name)
-      @indexes[name.to_s] = Relix.index_types[index_type].new(self, key_prefix(name), accessor, options)
+      @indexes[name.to_s] = Relix.index_types[index_type].new(self, name, accessor, options)
     end
 
     def indexes
@@ -30,20 +50,17 @@ module Relix
     end
 
     def lookup(&block)
-      unless primary_key = indexes['primary_key']
-        raise MissingPrimaryKeyError.new("You must declare a primary key for #{@klass.name}")
-      end
       if block
         query = Query.new(self)
         yield(query)
         query.run
       else
-        primary_key.all
+        primary_key_index.all(@redis)
       end
     end
 
     def index_ops(object, pk)
-      current_values_name = "#{key_prefix('current_values')}:#{pk}"
+      current_values_name = current_values_name(pk)
       @redis.watch current_values_name
       current_values = @redis.hgetall(current_values_name)
 
@@ -83,7 +100,7 @@ module Relix
       pk = primary_key_for(object)
 
       handle_concurrent_modifications(pk) do
-        current_values_name = "#{key_prefix('current_values')}:#{pk}"
+        current_values_name = current_values_name(pk)
         @redis.watch current_values_name
         current_values = @redis.hgetall(current_values_name)
 
@@ -105,6 +122,10 @@ module Relix
         @parent = (parent.respond_to?(:relix) ? parent.relix : false)
       end
       @parent
+    end
+
+    def current_values_name(pk)
+      @keyer.values(pk)
     end
 
   private
@@ -133,9 +154,6 @@ module Relix
     end
 
     def primary_key_for(object)
-      unless primary_key_index = indexes['primary_key']
-        raise MissingPrimaryKeyError.new("You must declare a primary key for #{@klass.name}")
-      end
       primary_key_index.read_normalized(object)
     end
   end

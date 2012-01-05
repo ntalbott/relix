@@ -1,10 +1,22 @@
 module Relix
   class Index
-    def initialize(set, name, accessor, options={})
+    def self.kind
+      @kind ||= name.gsub(/(?:^.+::|Index$)/, '').gsub(/([a-z])([A-Z])/){"#{$1}_#{$2}"}.downcase
+    end
+
+    def self.compact_kind
+      @compact_kind ||= kind[0..0]
+    end
+
+    def initialize(set, base_name, accessor, options={})
       @set = set
-      @name = "#{self.class.name}:#{name}"
+      @base_name = base_name
       @accessor = [accessor].flatten.collect{|a| a.to_s}
       @options = options
+    end
+
+    def name
+      @set.keyer.index(self, @base_name)
     end
 
     def read(object)
@@ -26,7 +38,7 @@ module Relix
         if value_hash.include?(k)
           value_hash[k].to_s
         else
-          raise MissingIndexValueError, "Missing #{k} when looking up by #{@name}"
+          raise MissingIndexValueError, "Missing #{k} when looking up by #{name}"
         end
       end.join(":")
     end
@@ -41,10 +53,6 @@ module Relix
 
     def query(r, value)
       nil
-    end
-
-    def key_for(value)
-      "#{@name}:#{value}"
     end
 
     module Ordering
@@ -75,10 +83,10 @@ module Relix
         end
       end
 
-      def range_from_options(options, value=nil)
+      def range_from_options(r, options, value=nil)
         start = (options[:offset] || 0)
         if f = options[:from]
-          start = (position(f, value) + 1)
+          start = (position(r, f, value) + 1)
         end
         stop = (options[:limit] ? (start + options[:limit] - 1) : -1)
         [start, stop]

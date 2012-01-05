@@ -62,8 +62,11 @@ class IndexingTest < RelixTest
         r.set('a', 'a')
         r.hget('a', 'a')
       end
+      def self.name
+        "BogusIndex"
+      end
     end
-    Relix.register_index(:bogus, bogus_index)
+    Relix.register_index(bogus_index)
     klass = Class.new do
       include Relix
       relix do
@@ -90,8 +93,8 @@ class IndexingTest < RelixTest
     object = klass.new
     object.key = 1
     object.index!
-    assert Relix.redis.keys.include?('MyKlass:current_values:1'), 'expected redis to have a current_values keys for MyKlass'
+    assert Relix.redis.keys.include?(klass.relix.current_values_name("1")), 'expected redis to have a current_values keys for MyKlass'
     object.deindex!
-    assert !Relix.redis.keys.include?('MyKlass:current_values:1'), 'expected redis not to have a current_values keys for MyKlass'
+    assert !Relix.redis.keys.include?(klass.relix.current_values_name("1")), 'expected redis not to have a current_values keys for MyKlass'
   end
 end

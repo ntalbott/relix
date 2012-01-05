@@ -24,8 +24,8 @@ class PrimaryKeyIndexTest < RelixTest
   end
 
   def test_lookup_by_primary_key
-    assert_equal [@talbott_family.key], Family.lookup{|q| q[:primary_key].eq('talbott')}
-    assert_equal [@omelia_family.key], Family.lookup{|q| q[:primary_key].eq('omelia')}
+    assert_equal [@talbott_family.key], Family.lookup{|q| q[:key].eq('talbott')}
+    assert_equal [@omelia_family.key], Family.lookup{|q| q[:key].eq('omelia')}
   end
 
   def test_lookup_all_returns_in_insertion_order
