@@ -31,24 +31,29 @@ module Relix
         @options = options
       end
 
-      def lt(value)
+      def lt(value, options={})
         score = @index.score_for_value(value)
-        all(score_lt: "(#{score}")
+        all(options.merge score_lt: "(#{score}")
       end
 
-      def lte(value)
+      def lte(value, options={})
         score = @index.score_for_value(value)
-        all(score_lt: "#{score}")
+        all(options.merge score_lt: "#{score}")
       end
 
-      def gt(value)
+      def gt(value, options={})
         score = @index.score_for_value(value)
-        all(score_gt: "(#{score}")
+        all(options.merge score_gt: "(#{score}")
       end
 
-      def gte(value)
+      def gte(value, options={})
         score = @index.score_for_value(value)
-        all(score_gt: "#{score}")
+        all(options.merge score_gt: "#{score}")
+      end
+
+      def order(value)
+        @options[:order] = value
+        self
       end
 
       def all(options={})
