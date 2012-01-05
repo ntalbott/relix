@@ -1,3 +1,7 @@
+### 1.1.1
+
+* Added keyers to the manifest file. (ntalbott)
+
 ### 1.1.0
 
 * Fixed and tested concurrency support. (ntalbott)

@@ -16,6 +16,7 @@ Gem::Specification.new do |s|
   s.add_dependency "redis", "~> 2.2.2"
 
   s.files = %w(
+    HISTORY.md
     README.md
     lib/relix.rb
     lib/relix/core.rb
@@ -24,6 +25,7 @@ Gem::Specification.new do |s|
     lib/relix/indexes/primary_key.rb
     lib/relix/indexes/unique.rb
     lib/relix/index_set.rb
+    lib/relix/keyer.rb
     lib/relix/query.rb
     lib/relix/redis.rb
     lib/relix/version.rb
