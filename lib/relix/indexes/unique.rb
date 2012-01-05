@@ -39,7 +39,23 @@ module Relix
     end
 
     def all(r, options={})
-      r.zrange(sorted_set_name, *range_from_options(r, options))
+      if [:score_gt, :score_lt].any? { |k| options.has_key?(k) }
+        min = options.fetch(:score_gt, "-inf")
+        max = options.fetch(:score_lt, "+inf")
+
+        # zrangebyscore uses offset/count rather than start/stop like zrange
+        offset, stop = range_from_options(r, options)
+        count = stop == -1 ? -1 : (stop - offset + 1)
+
+        command, score_1, score_2 = case options.fetch(:order, :asc)
+          when :desc, /desc/ then [:zrevrangebyscore, max, min]
+          when :asc,  /asc/  then [:zrangebyscore,    min, max]
+        end
+
+        r.send(command, sorted_set_name, score_1, score_2, limit: [offset, count])
+      else
+        r.zrange(sorted_set_name, *range_from_options(r, options))
+      end
     end
 
     def eq(r, value, options={})
