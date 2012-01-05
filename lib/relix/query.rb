@@ -31,9 +31,30 @@ module Relix
         @options = options
       end
 
+      def lt(value)
+        score = @index.score_for_value(value)
+        all(score_lt: "(#{score}")
+      end
+
+      def lte(value)
+        score = @index.score_for_value(value)
+        all(score_lt: "#{score}")
+      end
+
+      def gt(value)
+        score = @index.score_for_value(value)
+        all(score_gt: "(#{score}")
+      end
+
+      def gte(value)
+        score = @index.score_for_value(value)
+        all(score_gt: "#{score}")
+      end
+
       def all(options={})
         @all = true
-        @options = options
+        @options.merge!(options)
+        self
       end
 
       def lookup
