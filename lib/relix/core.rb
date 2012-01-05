@@ -35,5 +35,9 @@ module Relix
     relix.index!(self)
   end
 
+  def deindex!
+    relix.deindex!(self)
+  end
+
   class Error < StandardError; end
 end
