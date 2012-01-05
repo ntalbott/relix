@@ -101,17 +101,4 @@ class KeyingTest < RelixTest
     assert_equal "Tes:parent:m",
       @m.relix.indexes['parent'].name
   end
-
-  def test_key_migration
-    @m.relix.keyer(Relix::Keyer::Legacy)
-    @m.new(1, "bob@example.com", "fred")
-    @m.new(2, "kate@example.com", "fred")
-
-    @m.relix.keyer(Relix::Keyer::Migrator,
-      from: Relix::Keyer::Legacy,
-      to: Relix::Keyer::Compact)
-
-    assert_equal %w(1), @m.lookup{|q| q[:email].eq("bob@example.com")}
-    assert_equal %w(1 2), @m.lookup{|q| q[:parent].eq("fred")}
-  end
 end

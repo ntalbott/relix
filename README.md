@@ -181,3 +181,29 @@ Unique indexes ignore nil values - they will not be indexed and an error is not 
 
 **Supported Operators**: eq, all  
 **Ordering**: can be ordered on any numeric attribute (default is the to_i of the indexed value)
+
+
+## Keying
+
+A big part of using Redis well is choosing solid keys; Relix has a pluggable keying infrastructure that makes it easy to use different key names for different situations. This actually rose out of the fact that the first release of Relix had a pathetic set of keys, and the need to support existing deployments while moving to something better going forward. Keyers are set on a per-model basis along with other configuration:
+
+    relix do
+      keyer Relix::Keyer::Compact
+    end
+
+There are currently three keyers:
+
+
+### Standard
+
+This keyer is nice and verbose, which makes it ideal for development since you can browse the Redis keyspace and see at a glance how the indexes are stored. **Standard is the default keyer.**
+
+
+### Compact
+
+Keys take up space, and especially since Redis holds the keyset in memory it can be a big boon with a large data set to keep key names short. The Compact keyer tries to balance a reasonable level of readability (we can't sacrifice the ability to debug production issues) with keeping keys as compact as possible.
+
+
+### Legacy
+
+This (eventually to be deprecated and removed) strategy exactly mirrors the keying supported by Relix when first released.

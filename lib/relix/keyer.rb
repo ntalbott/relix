@@ -82,18 +82,6 @@ module Relix
         "#{@prefix}:#{name}:#{index.class.compact_kind}"
       end
     end
-
-    class Migrator
-      def initialize(klass, options)
-        @from = init_keyer(options[:from], klass)
-        @to = init_keyer(options[:to], klass)
-      end
-
-      def init_keyer(details, klass)
-        array = Array(details)
-        array.first.new(klass, (array[1] || {}))
-      end
-    end
   end
 
   default_keyer(Keyer::Legacy)
