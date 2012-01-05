@@ -11,15 +11,19 @@ module Relix
       r.zrem(key_for(old_value), pk)
     end
 
-    def eq(value, options={})
-      @set.redis.zrange(key_for(value), *range_from_options(options, value))
+    def eq(r, value, options={})
+      r.zrange(key_for(value), *range_from_options(r, options, value))
     end
 
-    def position(pk, value)
-      position = @set.redis.zrank(key_for(value), pk)
+    def position(r, pk, value)
+      position = r.zrank(key_for(value), pk)
       raise MissingIndexValueError, "Cannot find key #{pk} in index for #{value}" unless position
       position
     end
+
+    def key_for(value)
+      @set.keyer.component(name, value)
+    end
   end
-  register_index :multi, MultiIndex
+  register_index MultiIndex
 end
