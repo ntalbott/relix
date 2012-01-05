@@ -7,6 +7,10 @@ module Relix
       r.zrem(key_for(old_value), pk)
     end
 
+    def deindex(r, pk, object, old_value)
+      r.zrem(key_for(old_value), pk)
+    end
+
     def eq(value, options={})
       @set.redis.zrange(key_for(value), *range_from_options(options, value))
     end

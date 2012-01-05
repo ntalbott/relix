@@ -21,7 +21,7 @@ class ConcurrencyTest < RelixTest
     model.thing = "value one"
 
     model.relix.redis.before(:multi) do
-      fork do
+      concurrently do
         model.relix.redis = Relix.new_redis_client
         model.thing = "value two"
         model.index!
@@ -29,7 +29,6 @@ class ConcurrencyTest < RelixTest
         assert_not_equal %w(1), @m.lookup{|q| q[:thing].eq("original")}
         assert_not_equal %w(1), @m.lookup{|q| q[:thing].eq("value one")}
       end
-      Process.wait
     end
 
     model.index!
@@ -45,12 +44,11 @@ class ConcurrencyTest < RelixTest
     model.thing = "value one"
 
     create_conflict = proc do
-      fork do
+      concurrently do
         model.relix.redis = Relix.new_redis_client
         model.thing = "value two"
         model.index!
       end
-      Process.wait
       model.relix.redis.after(:multi) do
         model.relix.redis.before(:multi, &create_conflict)
       end
@@ -64,6 +62,54 @@ class ConcurrencyTest < RelixTest
     assert_equal %w(1), @m.lookup{|q| q[:thing].eq("value two")}
     assert_not_equal %w(1), @m.lookup{|q| q[:thing].eq("original")}
     assert_not_equal %w(1), @m.lookup{|q| q[:thing].eq("value one")}
+  end
+
+  def test_value_changes_mid_deindexing
+    model = @m.new(1, "original")
+    assert_equal %w(1), @m.lookup{|q| q[:thing].eq("original")}
+
+    model.relix.redis.before(:multi) do
+      concurrently do
+        model.relix.redis = Relix.new_redis_client
+        model.thing = "other"
+        model.index!
+        assert_equal %w(1), @m.lookup{|q| q[:thing].eq("other")}
+      end
+    end
+
+    model.deindex!
+
+    assert_equal [], @m.lookup
+  end
+
+  def test_value_changes_mid_deindexing_unrecoverably
+    model = @m.new(1, "original")
+    assert_equal %w(1), @m.lookup{|q| q[:thing].eq("original")}
+
+    create_conflict = proc do
+      concurrently do
+        model.relix.redis = Relix.new_redis_client
+        model.thing = "other"
+        model.index!
+      end
+
+      model.relix.redis.after(:multi) do
+        model.relix.redis.before(:multi, &create_conflict)
+      end
+    end
+
+    model.relix.redis.before(:multi, &create_conflict)
+
+    assert_raise(Relix::ExceededRetriesForConcurrentWritesError) do
+      model.deindex!
+    end
+
+    assert_equal %w(1), @m.lookup{|q| q[:thing].eq("other") }
+  end
+
+  def concurrently(&block)
+    fork(&block)
+    Process.wait
   end
 
   class RedisWrapper

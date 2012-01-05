@@ -89,30 +89,27 @@ module Relix
     end
 
     def index!(object)
-      pk = primary_key_index.read_normalized(object)
+      pk = primary_key_for(object)
 
-      retries = 5
-      loop do
-        ops = index_ops(object, pk)
-        results = @redis.multi do
-          ops.each do |op|
-            op.call(pk)
-          end
-        end
-        if results
-          results.each do |result|
-            raise RedisIndexingError.new(result.message) if Exception === result
-          end
-          break
-        else
-          retries -= 1
-          raise ExceededRetriesForConcurrentWritesError.new if retries <= 0
-        end
+      handle_concurrent_modifications(pk) do
+        index_ops(object, pk)
       end
     end
 
-    def current_values_name(pk)
-      @keyer.values(pk)
+    def deindex!(object)
+      pk = primary_key_for(object)
+
+      handle_concurrent_modifications(pk) do
+        current_values_name = current_values_name(pk)
+        @redis.watch current_values_name
+        current_values = @redis.hgetall(current_values_name)
+
+        indexes.map do |name, index|
+          ((watch = index.watch) && @redis.watch(*watch))
+          old_value = current_values[name]
+          proc { index.deindex(@redis, pk, object, old_value) }
+        end.tap { |ops| ops << proc { @redis.del current_values_name } }
+      end
     end
 
     def key_prefix(name)
@@ -125,6 +122,39 @@ module Relix
         @parent = (parent.respond_to?(:relix) ? parent.relix : false)
       end
       @parent
+    end
+
+    def current_values_name(pk)
+      @keyer.values(pk)
+    end
+
+  private
+
+    def handle_concurrent_modifications(primary_key)
+      retries = 5
+      loop do
+        ops = yield
+
+        results = @redis.multi do
+          ops.each do |op|
+            op.call(primary_key)
+          end
+        end
+
+        if results
+          results.each do |result|
+            raise RedisIndexingError.new(result.message) if Exception === result
+          end
+          break
+        else
+          retries -= 1
+          raise ExceededRetriesForConcurrentWritesError.new if retries <= 0
+        end
+      end
+    end
+
+    def primary_key_for(object)
+      primary_key_index.read_normalized(object)
     end
   end
 

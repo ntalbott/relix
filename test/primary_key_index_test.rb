@@ -13,6 +13,12 @@ class PrimaryKeyIndexTest < RelixTest
     assert_equal [], Person.lookup{|q| q[:family_key].eq(@talbott_family.key)}
   end
 
+  def test_deindex
+    assert Person.lookup.include?(@nathaniel.key), "expected index to include Nathaniel's key"
+    @nathaniel.delete
+    assert !Person.lookup.include?(@nathaniel.key), "expected index not to include Nathaniel's key"
+  end
+
   def test_lookup_all
     assert_equal [@talbott_family.key, @omelia_family.key].sort, Family.lookup.sort
   end

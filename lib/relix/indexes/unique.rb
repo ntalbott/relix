@@ -33,6 +33,11 @@ module Relix
       r.hdel(hash_name, old_value)
     end
 
+    def deindex(r, pk, object, old_value)
+      r.hdel(hash_name, old_value)
+      r.zrem(sorted_set_name, pk)
+    end
+
     def all(options={})
       @set.redis.zrange(sorted_set_name, *range_from_options(options))
     end

@@ -8,6 +8,10 @@ class Family
     @key = key
     index!
   end
+
+  def delete
+    deindex!
+  end
 end
 
 class Person
@@ -23,6 +27,10 @@ class Person
     @family_key = family_key
     @birthyear = birthyear
     index!
+  end
+
+  def delete
+    deindex!
   end
 end
 
