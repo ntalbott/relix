@@ -83,10 +83,10 @@ module Relix
         end
       end
 
-      def range_from_options(options, value=nil)
+      def range_from_options(r, options, value=nil)
         start = (options[:offset] || 0)
         if f = options[:from]
-          start = (position(f, value) + 1)
+          start = (position(r, f, value) + 1)
         end
         stop = (options[:limit] ? (start + options[:limit] - 1) : -1)
         [start, stop]

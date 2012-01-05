@@ -38,12 +38,12 @@ module Relix
       r.zrem(sorted_set_name, pk)
     end
 
-    def all(options={})
-      @set.redis.zrange(sorted_set_name, *range_from_options(options))
+    def all(r, options={})
+      r.zrange(sorted_set_name, *range_from_options(r, options))
     end
 
-    def eq(value, options={})
-      [@set.redis.hget(hash_name, value)].compact
+    def eq(r, value, options={})
+      [r.hget(hash_name, value)].compact
     end
   end
   register_index UniqueIndex

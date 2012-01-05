@@ -22,11 +22,11 @@ module Relix
       r.zrem(name, pk)
     end
 
-    def all(options={})
-      @set.redis.zrange(name, *range_from_options(options))
+    def all(r, options={})
+      r.zrange(name, *range_from_options(r, options))
     end
 
-    def eq(value, options)
+    def eq(r, value, options)
       [value]
     end
   end

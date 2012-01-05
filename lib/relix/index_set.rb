@@ -55,7 +55,7 @@ module Relix
         yield(query)
         query.run
       else
-        primary_key_index.all
+        primary_key_index.all(@redis)
       end
     end
 
