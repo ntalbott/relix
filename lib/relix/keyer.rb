@@ -84,5 +84,5 @@ module Relix
     end
   end
 
-  default_keyer(Keyer::Legacy)
+  default_keyer(Keyer::Standard)
 end
