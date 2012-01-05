@@ -191,7 +191,9 @@ A big part of using Redis well is choosing solid keys; Relix has a pluggable key
       keyer Relix::Keyer::Compact
     end
 
-There are currently three keyers:
+You can set the default keyer like so:
+
+    Relix.default_keyer(Relix::Keyer::Compact)
 
 
 ### Standard

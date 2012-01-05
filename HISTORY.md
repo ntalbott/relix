@@ -1,3 +1,10 @@
+### 1.1.0
+
+* Fixed and tested concurrency support. (ntalbott)
+* Added Relix::Error that all errors inherit from. (ntalbott)
+* Added support for deindexing a model. (myronmarston)
+* Bring sanity to key construction and make keyers pluggable. (ntalbott)
+
 ### 1.0.3
 
 * Back the Rubygems dependency down some.
