@@ -18,6 +18,10 @@ module Relix
       r.zadd(@name, rank, pk)
     end
 
+    def deindex(r, pk, object, old_value)
+      r.zrem(@name, pk)
+    end
+
     def all(options={})
       @set.redis.zrange(@name, *range_from_options(options))
     end

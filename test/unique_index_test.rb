@@ -56,6 +56,13 @@ class UniqueIndexTest < RelixTest
     assert_equal ['a'], @m.lookup{|q| q[:email].eq('fred@example.com')}
   end
 
+  def test_forced_deindex
+    o = @m.new('a', 'bob@example.com')
+    assert_equal ['a'], @m.lookup{|q| q[:email].eq('bob@example.com')}
+    o.deindex!
+    assert_equal [], @m.lookup{|q| q[:email].eq('bob@example.com')}
+  end
+
   def test_searching_for_nil
     o = @m.new('a', nil)
     assert_equal [], @m.lookup{|q| q[:email].eq(nil)}
