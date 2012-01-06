@@ -3,7 +3,7 @@ module Relix
     include Ordering
 
     def sorted_set_name
-      @set.keyer.component(name, 'ordered')
+      name
     end
 
     def watch
