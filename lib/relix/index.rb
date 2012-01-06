@@ -55,6 +55,10 @@ module Relix
       nil
     end
 
+    def extend_query_clause(query_clause)
+      # no-op
+    end
+
     module Ordering
       def initialize(*args)
         super

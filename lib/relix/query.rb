@@ -24,6 +24,7 @@ module Relix
         @redis = redis
         @index = index
         @options = {}
+        index.extend_query_clause(self)
       end
 
       def eq(value, options={})
