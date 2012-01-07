@@ -59,6 +59,10 @@ module Relix
       Query::Clause.new(redis, self)
     end
 
+    def needs_current_values_hash_entry?
+      true
+    end
+
     module Ordering
       def initialize(*args)
         super

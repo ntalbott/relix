@@ -71,7 +71,7 @@ module Relix
         old_value = current_values[name]
 
         next if value == old_value
-        current_values[name] = value
+        current_values[name] = value if index.needs_current_values_hash_entry?
 
         next unless index.filter(@redis, object, value)
 
@@ -83,7 +83,7 @@ module Relix
 
       ops << proc do
         @redis.hmset(current_values_name, *current_values.flatten)
-      end
+      end if current_values.any?
 
       ops
     end

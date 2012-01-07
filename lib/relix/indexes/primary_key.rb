@@ -29,6 +29,10 @@ module Relix
     def eq(r, value, options)
       [value]
     end
+
+    def needs_current_values_hash_entry?
+      false
+    end
   end
   register_index PrimaryKeyIndex
 end

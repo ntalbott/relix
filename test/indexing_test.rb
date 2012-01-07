@@ -86,8 +86,10 @@ class IndexingTest < RelixTest
   def test_deindexing_removes_current_value_key
     klass = Class.new do
       include Relix
-      relix { primary_key :key }
+      relix { primary_key :key; multi :other }
       attr_accessor :key
+
+      def other; "bar"; end
       def self.name; "MyKlass"; end
     end
     object = klass.new
