@@ -182,6 +182,30 @@ Unique indexes ignore nil values - they will not be indexed and an error is not 
 **Supported Operators**: eq, all  
 **Ordering**: can be ordered on any numeric attribute (default is the to_i of the indexed value)
 
+### OrderedIndex
+
+Ordered indexes are specifically designed to support range queries. Like a MultiIndex, they support multiple matching
+primary keys per indexed value. They are declared using #ordered in the relix block:
+
+    relix do
+      ordered :birthdate
+    end
+
+**Supported Operators**: eq, lt, lte, gt, gte, order, limit, offset  
+**Ordering**: ordered ascending by the indexed value, but can be queried in
+  reverse order if you use `order(:desc)`.
+
+Ordered indexes support a flexible fluent interface for specifying the query:
+
+    Person.lookup do |q|
+      q[:birthdate].
+        gte(Date.new(1990, 1, 1)).
+        lt(Date.new(1991, 1, 1).
+        order(:desc).
+        limit(10)
+    end
+
+This query returns the primary keys of the 10 youngest people born in 1990.
 
 ## Keying
 
