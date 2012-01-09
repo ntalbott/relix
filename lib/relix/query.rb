@@ -8,7 +8,7 @@ module Relix
     def [](index_name)
       index = @model.indexes[index_name.to_s]
       raise MissingIndexError.new("No index declared for #{index_name}") unless index
-      @clause = Clause.new(@model.redis, index)
+      @clause = index.create_query_clause(@model.redis)
     end
 
     def run
