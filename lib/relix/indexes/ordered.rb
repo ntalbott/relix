@@ -23,15 +23,14 @@ module Relix
       r.zrem(sorted_set_name, pk)
     end
 
-    def extend_query_clause(query_clause)
-      query_clause.extend QueryClauseMethods
+    def create_query_clause(redis)
+      QueryClause.new(redis, self)
     end
 
-    module QueryClauseMethods
-      def self.extended(object)
-        object.instance_eval do
-          @lt, @gt, @limit, @offset, @order = '+inf', '-inf', nil, nil, :asc
-        end
+    class QueryClause
+      def initialize(redis, index)
+        @redis, @index = redis, index
+        @lt, @gt, @limit, @offset, @order = '+inf', '-inf', nil, nil, :asc
       end
 
       def lt(value)

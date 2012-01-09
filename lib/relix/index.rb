@@ -55,8 +55,8 @@ module Relix
       nil
     end
 
-    def extend_query_clause(query_clause)
-      # no-op
+    def create_query_clause(redis)
+      Query::Clause.new(redis, self)
     end
 
     module Ordering
