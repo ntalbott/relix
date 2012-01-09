@@ -2,6 +2,11 @@ module Relix
   class OrderedIndex < Index
     include Ordering
 
+    def initialize(set, base_name, accessor, options={})
+      super
+      @order = accessor
+    end
+
     def sorted_set_name
       name
     end

@@ -73,4 +73,21 @@ class OrderedIndexTest < RelixTest
     @nathaniel.index!
     assert_equal %w(keagan nathaniel reuben), Person.lookup { |q| q[:birthyear].gt(2000).lt(2004) }
   end
+
+  def klass_with_ordered_date_index
+    Class.new do
+      include Relix
+      relix.primary_key :key
+      relix.ordered :date
+      attr_accessor :key, :date
+      def initialize(key, date); @key, @date = key, date; index!; end
+    end
+  end
+
+  def test_lt_date_value
+    klass = klass_with_ordered_date_index
+    before_record = klass.new("before", Date.new(2011, 8, 3))
+    after_record = klass.new("after", Date.new(2011, 9, 3))
+    assert_equal %w(before), klass.lookup { |q| q[:date].lt(Date.new(2011, 8, 15)) }
+  end
 end
