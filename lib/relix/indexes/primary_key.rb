@@ -7,7 +7,7 @@ module Relix
     end
 
     def filter(r, object, value)
-      !r.zrank(name, value)
+      !r.zscore(name, value)
     end
 
     def query(r, value)
