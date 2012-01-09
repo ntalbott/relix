@@ -54,6 +54,11 @@ module Relix
         self
       end
 
+      def eq(value)
+        lte(value)
+        gte(value)
+      end
+
       def order(value)
         unless [:asc, :desc].include?(value)
           raise InvalidQueryOption.new("order must be :asc or :desc but was #{value.inspect}")

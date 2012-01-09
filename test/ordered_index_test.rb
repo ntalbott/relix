@@ -61,6 +61,10 @@ class OrderedIndexTest < RelixTest
     assert_equal %w(keagan reuben), Person.lookup { |q| q[:birthyear].gt(1978).offset(3).limit(2) }
   end
 
+  def test_eq_query
+    assert_equal %w(gabrielle william), Person.lookup { |q| q[:birthyear].eq(2006) }
+  end
+
   def test_deindex
     assert Person.lookup{ |q| q[:birthyear] }.include?(@nathaniel.key), "expected to include Nathaniel's key"
     @nathaniel.delete
