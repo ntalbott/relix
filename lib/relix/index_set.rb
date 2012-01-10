@@ -71,7 +71,7 @@ module Relix
         old_value = current_values[name]
 
         next if value == old_value
-        current_values[name] = value if index.needs_current_values_hash_entry?
+        current_values[name] = value unless index.attribute_immutable?
 
         next unless index.filter(@redis, object, value)
 

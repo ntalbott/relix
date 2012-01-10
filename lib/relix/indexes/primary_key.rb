@@ -30,8 +30,8 @@ module Relix
       [value]
     end
 
-    def needs_current_values_hash_entry?
-      false
+    def attribute_immutable?
+      true
     end
   end
   register_index PrimaryKeyIndex
