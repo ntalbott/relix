@@ -12,6 +12,7 @@ module Relix
       @set = set
       @base_name = base_name
       @accessor = [accessor].flatten.collect{|a| a.to_s}
+      @attribute_immutable = !!options[:immutable_attribute]
       @options = options
     end
 
@@ -60,7 +61,7 @@ module Relix
     end
 
     def attribute_immutable?
-      false
+      @attribute_immutable
     end
 
     module Ordering
