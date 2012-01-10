@@ -1,8 +1,10 @@
 require 'test_helper'
+require 'support/redis_wrapper'
 
 class ConcurrencyTest < RelixTest
   def setup
     @m = Class.new do
+      def self.name; "MyModel"; end
       include Relix
       relix do
         primary_key :key
@@ -107,35 +109,37 @@ class ConcurrencyTest < RelixTest
     assert_equal %w(1), @m.lookup{|q| q[:thing].eq("other") }
   end
 
+  def test_immutable_attribute_indexes_are_not_watched
+    @m.relix.multi :thing, immutable_attribute: true
+
+    verify_no_watched_index_keys = proc do |key|
+      raise "watch was called for index key #{key}" unless key =~ /values/
+      @m.relix.redis.before(:watch, &verify_no_watched_index_keys)
+    end
+    @m.relix.redis.before(:watch, &verify_no_watched_index_keys)
+
+    @m.new(1, "original")
+  end
+
+  def test_multi_index_keys_are_watched
+    watched_keys = []
+    track_watched_keys = proc do |*keys|
+      watched_keys.push(*keys)
+      @m.relix.redis.before(:watch, &track_watched_keys)
+    end
+    @m.relix.redis.before(:watch, &track_watched_keys)
+
+    model = @m.new(1, "original")
+    model.thing = "other"
+    model.index!
+
+    expected_keys = %w[ original other ].map { |v| @m.relix.indexes['thing'].key_for(v) }
+    missing_keys = expected_keys - watched_keys
+    assert_equal [], missing_keys
+  end
+
   def concurrently(&block)
     fork(&block)
     Process.wait
-  end
-
-  class RedisWrapper
-    def initialize(wrapped)
-      @wrapped = wrapped
-      @befores = {}
-      @afters = {}
-    end
-
-    def before(method, &before)
-      @befores[method.to_sym] = before
-    end
-
-    def after(method, &after)
-      @afters[method.to_sym] = after
-    end
-
-    def method_missing(m, *args, &block)
-      if @befores[m]
-        @befores.delete(m).call
-      end
-      r = @wrapped.send(m, *args, &block)
-      if @afters[m]
-        @afters.delete(m).call
-      end
-      r
-    end
   end
 end

@@ -86,8 +86,10 @@ class IndexingTest < RelixTest
   def test_deindexing_removes_current_value_key
     klass = Class.new do
       include Relix
-      relix { primary_key :key }
+      relix { primary_key :key; multi :other }
       attr_accessor :key
+
+      def other; "bar"; end
       def self.name; "MyKlass"; end
     end
     object = klass.new
@@ -96,5 +98,23 @@ class IndexingTest < RelixTest
     assert Relix.redis.keys.include?(klass.relix.current_values_name("1")), 'expected redis to have a current_values keys for MyKlass'
     object.deindex!
     assert !Relix.redis.keys.include?(klass.relix.current_values_name("1")), 'expected redis not to have a current_values keys for MyKlass'
+  end
+
+  def test_immutable_attribute_indexing
+    klass = Class.new do
+      include Relix
+      relix do
+        primary_key :key
+        multi :other, immutable_attribute: true
+      end
+
+      attr_accessor :key, :other
+      def self.name; "MyKlass"; end
+    end
+
+    object = klass.new
+    object.key = 1
+    object.index!
+    assert !Relix.redis.keys.include?(klass.relix.current_values_name("1")), 'expected redis to not have a current_values keys for MyKlass'
   end
 end

@@ -2,12 +2,17 @@ module Relix
   class PrimaryKeyIndex < Index
     include Ordering
 
-    def watch
+    def initialize(set, base_name, accessor, options={})
+      options[:immutable_attribute] = true unless options.has_key?(:immutable_attribute)
+      super
+    end
+
+    def watch_keys(*values)
       name
     end
 
     def filter(r, object, value)
-      !r.zrank(name, value)
+      !r.zscore(name, value)
     end
 
     def query(r, value)

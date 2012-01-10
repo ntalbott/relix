@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'support/redis_wrapper'
 
 class PrimaryKeyIndexTest < RelixTest
   include FamilyFixture
@@ -30,5 +31,29 @@ class PrimaryKeyIndexTest < RelixTest
 
   def test_lookup_all_returns_in_insertion_order
     assert_equal @everyone.collect{|e| e.key}, Person.lookup
+  end
+
+  def test_primary_key_not_stored_in_current_values
+    redis_hash = Person.relix.current_values_name('nathaniel')
+    current_values = Relix.redis.hgetall(redis_hash)
+    assert !current_values.keys.include?('key'), 'expected the current values hash not to contain a duplicate of the primary key'
+  end
+
+  def primary_key_only_class
+    Class.new do
+      include Relix
+      relix.primary_key :key
+      relix.redis = RedisWrapper.new(relix.redis)
+      attr_accessor :key
+      def initialize(key); @key = key; index!; end
+    end
+  end
+
+  def test_current_values_hash_not_stored_when_only_primary_key
+    klass = primary_key_only_class
+    klass.relix.redis.before(:hmset) do
+      raise "hmset should not be called"
+    end
+    record = klass.new("foo")
   end
 end

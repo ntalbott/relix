@@ -2,6 +2,10 @@ module Relix
   class MultiIndex < Index
     include Ordering
 
+    def watch_keys(*values)
+      values.compact.map { |v| key_for(v) }
+    end
+
     def index(r, pk, object, value, old_value)
       r.zadd(key_for(value), score(object, value), pk)
       r.zrem(key_for(old_value), pk)
