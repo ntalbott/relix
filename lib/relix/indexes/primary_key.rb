@@ -7,7 +7,7 @@ module Relix
       super
     end
 
-    def watch
+    def watch_keys
       name
     end
 

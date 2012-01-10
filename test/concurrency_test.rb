@@ -108,6 +108,18 @@ class ConcurrencyTest < RelixTest
     assert_equal %w(1), @m.lookup{|q| q[:thing].eq("other") }
   end
 
+  def test_immutable_attribute_indexes_are_not_watched
+    @m.relix.multi :thing, immutable_attribute: true
+
+    verify_no_watched_index_keys = proc do |key|
+      raise "watch was called for index key #{key}" unless key =~ /values/
+      @m.relix.redis.before(:watch, &verify_no_watched_index_keys)
+    end
+    @m.relix.redis.before(:watch, &verify_no_watched_index_keys)
+
+    @m.new(1, "original")
+  end
+
   def concurrently(&block)
     fork(&block)
     Process.wait

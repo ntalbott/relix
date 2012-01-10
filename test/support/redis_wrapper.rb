@@ -15,11 +15,11 @@ class RedisWrapper
 
   def method_missing(m, *args, &block)
     if @befores[m]
-      @befores.delete(m).call
+      @befores.delete(m).call(*args)
     end
     r = @wrapped.send(m, *args, &block)
     if @afters[m]
-      @afters.delete(m).call
+      @afters.delete(m).call(*args)
     end
     r
   end

@@ -45,6 +45,10 @@ module Relix
     end
 
     def watch
+      watch_keys unless attribute_immutable?
+    end
+
+    def watch_keys
       nil
     end
 
