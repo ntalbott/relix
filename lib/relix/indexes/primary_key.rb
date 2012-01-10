@@ -2,6 +2,11 @@ module Relix
   class PrimaryKeyIndex < Index
     include Ordering
 
+    def initialize(set, base_name, accessor, options={})
+      options[:immutable_attribute] = true unless options.has_key?(:immutable_attribute)
+      super
+    end
+
     def watch
       name
     end
@@ -28,10 +33,6 @@ module Relix
 
     def eq(r, value, options)
       [value]
-    end
-
-    def attribute_immutable?
-      true
     end
   end
   register_index PrimaryKeyIndex
