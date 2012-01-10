@@ -55,6 +55,10 @@ module Relix
       nil
     end
 
+    def create_query_clause(redis)
+      Query::Clause.new(redis, self)
+    end
+
     module Ordering
       def initialize(*args)
         super
@@ -65,6 +69,11 @@ module Relix
         if @order
           value = object.send(@order)
         end
+
+        score_for_value(value)
+      end
+
+      def score_for_value(value)
         case value
         when Numeric
           value
