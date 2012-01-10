@@ -4,6 +4,7 @@ require 'support/redis_wrapper'
 class ConcurrencyTest < RelixTest
   def setup
     @m = Class.new do
+      def self.name; "MyModel"; end
       include Relix
       relix do
         primary_key :key
@@ -118,6 +119,23 @@ class ConcurrencyTest < RelixTest
     @m.relix.redis.before(:watch, &verify_no_watched_index_keys)
 
     @m.new(1, "original")
+  end
+
+  def test_multi_index_keys_are_watched
+    watched_keys = []
+    track_watched_keys = proc do |*keys|
+      watched_keys.push(*keys)
+      @m.relix.redis.before(:watch, &track_watched_keys)
+    end
+    @m.relix.redis.before(:watch, &track_watched_keys)
+
+    model = @m.new(1, "original")
+    model.thing = "other"
+    model.index!
+
+    expected_keys = %w[ original other ].map { |v| @m.relix.indexes['thing'].key_for(v) }
+    missing_keys = expected_keys - watched_keys
+    assert_equal [], missing_keys
   end
 
   def concurrently(&block)

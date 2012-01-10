@@ -44,11 +44,11 @@ module Relix
       end.join(":")
     end
 
-    def watch
-      watch_keys unless attribute_immutable?
+    def watch(*values)
+      watch_keys(*values) unless attribute_immutable?
     end
 
-    def watch_keys
+    def watch_keys(*values)
       nil
     end
 
