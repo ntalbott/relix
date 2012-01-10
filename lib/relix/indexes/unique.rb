@@ -10,7 +10,7 @@ module Relix
       @set.keyer.component(name, 'lookup')
     end
 
-    def watch
+    def watch_keys(*values)
       hash_name
     end
 

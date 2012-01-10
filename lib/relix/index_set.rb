@@ -65,13 +65,13 @@ module Relix
       current_values = @redis.hgetall(current_values_name)
 
       ops = indexes.collect do |name,index|
-        ((watch = index.watch) && @redis.watch(*watch))
-
         value = index.read_normalized(object)
         old_value = current_values[name]
 
+        ((watch = index.watch(value, old_value)) && @redis.watch(*watch))
+
         next if value == old_value
-        current_values[name] = value
+        current_values[name] = value unless index.attribute_immutable?
 
         next unless index.filter(@redis, object, value)
 
@@ -83,7 +83,7 @@ module Relix
 
       ops << proc do
         @redis.hmset(current_values_name, *current_values.flatten)
-      end
+      end if current_values.any?
 
       ops
     end
@@ -105,8 +105,8 @@ module Relix
         current_values = @redis.hgetall(current_values_name)
 
         indexes.map do |name, index|
-          ((watch = index.watch) && @redis.watch(*watch))
           old_value = current_values[name]
+          ((watch = index.watch(old_value)) && @redis.watch(*watch))
           proc { index.deindex(@redis, pk, object, old_value) }
         end.tap { |ops| ops << proc { @redis.del current_values_name } }
       end

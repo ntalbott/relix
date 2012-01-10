@@ -11,7 +11,7 @@ module Relix
       name
     end
 
-    def watch
+    def watch_keys(*values)
       sorted_set_name
     end
 

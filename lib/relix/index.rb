@@ -12,6 +12,7 @@ module Relix
       @set = set
       @base_name = base_name
       @accessor = [accessor].flatten.collect{|a| a.to_s}
+      @attribute_immutable = !!options[:immutable_attribute]
       @options = options
     end
 
@@ -43,7 +44,11 @@ module Relix
       end.join(":")
     end
 
-    def watch
+    def watch(*values)
+      watch_keys(*values) unless attribute_immutable?
+    end
+
+    def watch_keys(*values)
       nil
     end
 
@@ -57,6 +62,10 @@ module Relix
 
     def create_query_clause(redis)
       Query::Clause.new(redis, self)
+    end
+
+    def attribute_immutable?
+      @attribute_immutable
     end
 
     module Ordering
