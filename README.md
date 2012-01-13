@@ -143,6 +143,17 @@ When there are multiple attributes, they are specified in a hash:
     end
 
 
+### Space efficiency
+
+Model attributes that are indexed on but that never change can be marked as immutable to prevent them being stored (since they don't have to be reindexed). The primary key is marked immutable by default, but other attributes can be as well:
+
+    relix do
+      unique :token, immutable_attribute: true
+    end
+
+This can also provide concurrency benefits since the keys for the indexes on immutable attributes don't have to be watched for concurrent modification.
+
+
 ## Index Types
 
 ### PrimaryKeyIndex
@@ -218,6 +229,8 @@ A big part of using Redis well is choosing solid keys; Relix has a pluggable key
 You can set the default keyer like so:
 
     Relix.default_keyer(Relix::Keyer::Compact)
+
+Keyers are inherited, with child classes will use their parent's keyer unless a keyer is explicitly set on the child.
 
 
 ### Standard

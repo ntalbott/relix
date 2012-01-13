@@ -1,3 +1,11 @@
+### 1.2.0
+
+* Improved keyer inheritance, including better legacy
+  support. (ntalbott)
+* Improved memory efficiency by not storing unnecessary
+  data. (myronmarston)
+* Added Ordered Indexes for easy range queries. (myronmarston)
+
 ### 1.1.1
 
 * Added keyers to the manifest file. (ntalbott)

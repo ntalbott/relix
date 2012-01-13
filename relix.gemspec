@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
     lib/relix/core.rb
     lib/relix/index.rb
     lib/relix/indexes/multi.rb
+    lib/relix/indexes/ordered.rb
     lib/relix/indexes/primary_key.rb
     lib/relix/indexes/unique.rb
     lib/relix/index_set.rb
