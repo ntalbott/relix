@@ -101,4 +101,25 @@ class KeyingTest < RelixTest
     assert_equal "Tes:parent:m",
       @m.relix.indexes['parent'].name
   end
+
+  def test_keyer_inheritance
+    parent = Class.new do
+      def self.name; "parent"; end
+      include Relix
+      relix do
+        primary_key :key
+        keyer Relix::Keyer::Legacy
+      end
+      attr_accessor :key
+    end
+    child = Class.new(parent) do
+      def self.name; "child"; end
+    end
+
+    assert_equal "parent:current_values:1", child.relix.current_values_name("1")
+
+    child.relix.keyer(Relix::Keyer::Standard)
+
+    assert_equal "child:values:1", child.relix.current_values_name("1")
+  end
 end

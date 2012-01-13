@@ -5,7 +5,7 @@ module Relix
       @klass = klass
       @redis = redis
       @indexes = Hash.new
-      @keyer = Keyer.default_for(@klass)
+      @keyer = Keyer.default_for(@klass) unless parent
     end
 
     def primary_key(accessor)
@@ -28,7 +28,7 @@ module Relix
       if value
         @keyer = value.new(@klass, options)
       else
-        @keyer
+        (@keyer || parent.keyer)
       end
     end
 
@@ -125,7 +125,7 @@ module Relix
     end
 
     def current_values_name(pk)
-      @keyer.values(pk)
+      keyer.values(pk)
     end
 
   private
