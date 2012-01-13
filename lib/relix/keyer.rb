@@ -18,16 +18,16 @@ module Relix
         @prefix = klass.name
       end
 
-      def values(pk)
-        "#{@prefix}:current_values:#{pk}"
+      def values(pk, klass)
+        "#{klass.name}:current_values:#{pk}"
       end
 
       def index(index, name)
         case index
         when PrimaryKeyIndex
-          "#{index.class.name}:#{@prefix}:primary_key"
+          "#{index.class.name}:#{index.model_name}:primary_key"
         else
-          "#{index.class.name}:#{@prefix}:#{name}"
+          "#{index.class.name}:#{index.model_name}:#{name}"
         end
       end
 
@@ -52,12 +52,12 @@ module Relix
         @prefix = klass.name
       end
 
-      def values(pk)
+      def values(pk, klass)
         "#{@prefix}:values:#{pk}"
       end
 
       def index(index, name)
-        "#{@prefix}:#{name}:#{index.class.kind}"
+        "#{index.model_name}:#{name}:#{index.class.kind}"
       end
 
       def component(name, component)
@@ -74,7 +74,7 @@ module Relix
         end
       end
 
-      def values(pk)
+      def values(pk, klass)
         "#{@prefix}:v:#{pk}"
       end
 

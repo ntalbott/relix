@@ -1,6 +1,7 @@
 module Relix
   class IndexSet
     attr_accessor :redis
+    attr_reader :klass
     def initialize(klass, redis)
       @klass = klass
       @redis = redis
@@ -125,7 +126,7 @@ module Relix
     end
 
     def current_values_name(pk)
-      keyer.values(pk)
+      keyer.values(pk, @klass)
     end
 
   private

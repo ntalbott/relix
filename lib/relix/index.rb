@@ -8,9 +8,11 @@ module Relix
       @compact_kind ||= kind[0..0]
     end
 
+    attr_reader :model_name
     def initialize(set, base_name, accessor, options={})
       @set = set
       @base_name = base_name
+      @model_name = @set.klass.name
       @accessor = [accessor].flatten.collect{|a| a.to_s}
       @attribute_immutable = !!options[:immutable_attribute]
       @options = options

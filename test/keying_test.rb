@@ -114,12 +114,36 @@ class KeyingTest < RelixTest
     end
     child = Class.new(parent) do
       def self.name; "child"; end
+      relix do
+        unique :email
+      end
     end
 
-    assert_equal "parent:current_values:1", child.relix.current_values_name("1")
+    assert_equal "child:current_values:1", child.relix.current_values_name("1")
+    assert_equal "Relix::PrimaryKeyIndex:parent:primary_key",
+      child.relix.primary_key_index.name
+    assert_equal "Relix::UniqueIndex:child:email",
+      child.relix.indexes['email'].name
+
+    parent.relix.keyer(Relix::Keyer::Standard)
+    assert_equal "parent:values:1", child.relix.current_values_name("1")
+    assert_equal "parent:key:primary_key",
+      child.relix.primary_key_index.name
+    assert_equal "child:email:unique",
+      child.relix.indexes['email'].name
+
+    child.relix.keyer(Relix::Keyer::Legacy)
+    assert_equal "child:current_values:1", child.relix.current_values_name("1")
+    assert_equal "parent:key:primary_key",
+      child.relix.primary_key_index.name
+    assert_equal "Relix::UniqueIndex:child:email",
+      child.relix.indexes['email'].name
 
     child.relix.keyer(Relix::Keyer::Standard)
-
     assert_equal "child:values:1", child.relix.current_values_name("1")
+    assert_equal "parent:key:primary_key",
+      child.relix.primary_key_index.name
+    assert_equal "child:email:unique",
+      child.relix.indexes['email'].name
   end
 end
