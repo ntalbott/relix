@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'support/redis_wrapper'
 
 class IndexingTest < RelixTest
   def test_multi_value_index
@@ -78,6 +79,26 @@ class IndexingTest < RelixTest
     object = klass.new
     object.key = 'a'
     object.stuff = 'a'
+    assert_raise Relix::RedisIndexingError do
+      object.index!
+    end
+  end
+
+  def test_out_of_memory_while_indexing
+    klass = Class.new do
+      include Relix
+      relix.primary_key :key
+      attr_accessor :key
+    end
+
+    klass.relix.redis = Relix.new_redis_client
+    def (klass.relix.redis).multi
+      yield
+      RuntimeError.new("ERR command not allowed when used memory > 'maxmemory'")
+    end
+
+    object = klass.new
+    object.key = "a"
     assert_raise Relix::RedisIndexingError do
       object.index!
     end

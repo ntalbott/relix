@@ -143,7 +143,7 @@ module Relix
         end
 
         if results
-          results.each do |result|
+          Array(results).each do |result|
             raise RedisIndexingError.new(result.message) if Exception === result
           end
           break
