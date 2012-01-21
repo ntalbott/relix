@@ -135,7 +135,13 @@ class IndexingTest < RelixTest
 
     object = klass.new
     object.key = 1
+    object.other = "foo"
     object.index!
     assert !Relix.redis.keys.include?(klass.relix.current_values_name("1")), 'expected redis to not have a current_values keys for MyKlass'
+
+    # ensure we can deindex it...
+    assert_equal %w(1), klass.lookup { |q| q[:other].eq("foo") }
+    object.deindex!
+    assert_equal %w(), klass.lookup { |q| q[:other].eq("foo") }
   end
 end

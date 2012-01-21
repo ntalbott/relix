@@ -106,7 +106,12 @@ module Relix
         current_values = @redis.hgetall(current_values_name)
 
         indexes.map do |name, index|
-          old_value = current_values[name]
+          old_value = if index.attribute_immutable?
+            index.read_normalized(object)
+          else
+            current_values[name]
+          end
+
           ((watch = index.watch(old_value)) && @redis.watch(*watch))
           proc { index.deindex(@redis, pk, object, old_value) }
         end.tap { |ops| ops << proc { @redis.del current_values_name } }
