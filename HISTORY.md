@@ -1,3 +1,9 @@
+### 1.2.1
+
+* Handle out of memory errors better. (myronmarston)
+* Property deindex immutable attributes. (myronmarston)
+* Allow offsetting primary key lookup by a primary key. (ntalbott)
+
 ### 1.2.0
 
 * Improved keyer inheritance, including better legacy
