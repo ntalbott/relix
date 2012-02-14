@@ -33,6 +33,16 @@ class PrimaryKeyIndexTest < RelixTest
     assert_equal @everyone.collect{|e| e.key}, Person.lookup
   end
 
+  def test_offset_by_key
+    assert_equal %w(katie reuben), Person.lookup{|q| q[:key].all(from: "nathaniel", limit: 2)}
+  end
+
+  def test_offset_by_missing_key
+    assert_raise Relix::MissingIndexValueError do
+      Person.lookup{|q| q[:key].all(from: "bogus", limit: 2)}
+    end
+  end
+
   def test_primary_key_not_stored_in_current_values
     redis_hash = Person.relix.current_values_name('nathaniel')
     current_values = Relix.redis.hgetall(redis_hash)

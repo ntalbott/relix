@@ -34,6 +34,12 @@ module Relix
     def eq(r, value, options)
       [value]
     end
+
+    def position(r, pk, value)
+      position = r.zrank(name, pk)
+      raise MissingIndexValueError, "Cannot find key #{pk} in index" unless position
+      position
+    end
   end
   register_index PrimaryKeyIndex
 end
