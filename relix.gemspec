@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = ">= 1.5.2"
 
   s.add_dependency "hiredis", "~> 0.4.1"
-  s.add_dependency "redis", "~> 2.2.2"
+  s.add_dependency "redis", "~> 3.0"
 
   s.files = %w(
     HISTORY.md

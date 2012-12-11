@@ -1,3 +1,7 @@
+### 1.3.0
+
+* Update redis-rb dependency to 3.0. (ntalbott)
+
 ### 1.2.1
 
 * Handle out of memory errors better. (myronmarston)

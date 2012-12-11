@@ -157,6 +157,8 @@ module Relix
           raise ExceededRetriesForConcurrentWritesError.new if retries <= 0
         end
       end
+    rescue Redis::CommandError => e
+      raise RedisIndexingError.new(e.message)
     end
 
     def primary_key_for(object)
