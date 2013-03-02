@@ -23,7 +23,7 @@ module Relix
       r.zadd(name, rank, pk)
     end
 
-    def deindex(r, pk, object, old_value)
+    def deindex(r, pk, old_value)
       r.zrem(name, pk)
     end
 

@@ -1,3 +1,8 @@
+### 1.4.0
+
+* Add #deindex_by_primary_key. (ntalbott)
+* Add license. (ntalbott)
+
 ### 1.3.0
 
 * Update redis-rb dependency to 3.0. (ntalbott)

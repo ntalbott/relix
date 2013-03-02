@@ -19,7 +19,7 @@ module Relix
       r.zadd(sorted_set_name, score(object, value), pk)
     end
 
-    def deindex(r, pk, object, old_value)
+    def deindex(r, pk, old_value)
       r.zrem(sorted_set_name, pk)
     end
 

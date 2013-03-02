@@ -2,11 +2,13 @@
 
 A Redis-backed indexing layer that can be used with any (or no) backend data storage.
 
+
 ## Rationale
 
 With the rise in popularity of non-relational databases, and the regular use of relational databases in non-relational ways, data indexing has become an aspect of data storage that you can't simply assume is handled for you. More and more applications are storing their data in databases that treat that stored data as opaque, and thus there's no query engine sitting on top of the data making sure that it can be quickly and flexibly looked up.
 
 Relix is a layer that can be added on to any model to make all the normal types of querying you want to do: equality, less than/greater than, in set, range, limit, etc., quick and painless. Relix depends on Redis to be awesome at what it does - blazingly fast operations on basic data types - and layers on top of that pluggable indexing of your data for fast lookup.
+
 
 ## Philosophy
 
@@ -16,6 +18,7 @@ Relix is a layer that can be added on to any model to make all the normal types 
 ** Since we can't guarantee atomicity with the backing datastore, index early and clean up later.
 ** Make continuous index repair easy since the chaos monkey could attack at any time.
 * Be pluggable; keep the core simple and allow easy extensibility
+
 
 ## Installation
 
@@ -92,6 +95,7 @@ Since the :primary_key index is ordered by insertion order, we've also declared 
 
     p Transaction.lookup{|q| q[:by_created_at].all}  # => [4,2,1,3]
 
+
 ## Querying
 
 Relix uses a simple query language based on method chaining. A "root" query is passed in to the lookup block, and then query terms are chained off of it:
@@ -142,7 +146,6 @@ When there are multiple attributes, they are specified in a hash:
         {storage_state: 'cached', account_id: 'bob'}, limit: 10)
     end
 
-
 ### Space efficiency
 
 Model attributes that are indexed on but that never change can be marked as immutable to prevent them being stored (since they don't have to be reindexed). The primary key is marked immutable by default, but other attributes can be as well:
@@ -152,6 +155,19 @@ Model attributes that are indexed on but that never change can be marked as immu
     end
 
 This can also provide concurrency benefits since the keys for the indexes on immutable attributes don't have to be watched for concurrent modification.
+
+
+## Deindexing
+
+You'll probably want to remove an object from the index at some point. To do that simply call `#deindex!` on it:
+
+    person.deindex!
+
+You can also remove something from the index even if you don't have the complete object in hand anymore; simply call `.deindex_by_primary_key!` on its class:
+
+    Person.deindex_by_primary_key!(44)
+
+The class-level `deindex_by_primary_key` cannot clean up immutable indexes other than the primary key (since the current value of immutable keys is not stored), so calling plain `deindex!` on an object is preferred.
 
 
 ## Index Types
@@ -164,9 +180,8 @@ The primary key index is the only index that is required on a model. Under the c
       primary_key :id
     end
 
-**Supported Operators**: eq, all  
+**Supported Operators**: eq, all
 **Ordering**: insertion
-
 
 ### MultiIndex
 
@@ -176,9 +191,8 @@ Multi indexes allow multiple matching primary keys per indexed value, and are id
       multi :account_id, order: :created_at
     end
 
-**Supported Operators**: eq  
+**Supported Operators**: eq
 **Ordering**: can be ordered on any numeric attribute (default is the to_i of the indexed value)
-
 
 ### UniqueIndex
 
@@ -190,7 +204,7 @@ Unique indexes will raise an error if the same value is indexed twice for a diff
 
 Unique indexes ignore nil values - they will not be indexed and an error is not raised if there is more than one object with a value of nil. A multi-value unique index will be completely skipped if any value in it is nil.
 
-**Supported Operators**: eq, all  
+**Supported Operators**: eq, all
 **Ordering**: can be ordered on any numeric attribute (default is the to_i of the indexed value)
 
 ### OrderedIndex
@@ -202,7 +216,7 @@ primary keys per indexed value. They are declared using #ordered in the relix bl
       ordered :birthdate
     end
 
-**Supported Operators**: eq, lt, lte, gt, gte, order, limit, offset  
+**Supported Operators**: eq, lt, lte, gt, gte, order, limit, offset
 **Ordering**: ordered ascending by the indexed value, but can be queried in
   reverse order if you use `order(:desc)`.
 
@@ -217,6 +231,7 @@ Ordered indexes support a flexible fluent interface for specifying the query:
     end
 
 This query returns the primary keys of the 10 youngest people born in 1990.
+
 
 ## Keying
 

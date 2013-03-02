@@ -113,7 +113,22 @@ module Relix
           end
 
           ((watch = index.watch(old_value)) && @redis.watch(*watch))
-          proc { index.deindex(@redis, pk, object, old_value) }
+          proc { index.deindex(@redis, pk, old_value) }
+        end.tap { |ops| ops << proc { @redis.del current_values_name } }
+      end
+    end
+
+    def deindex_by_primary_key!(pk)
+      handle_concurrent_modifications(pk) do
+        current_values_name = current_values_name(pk)
+        @redis.watch current_values_name
+        current_values = @redis.hgetall(current_values_name)
+
+        indexes.map do |name, index|
+          old_value = current_values[name]
+
+          ((watch = index.watch(old_value)) && @redis.watch(*watch))
+          proc { index.deindex(@redis, pk, old_value) }
         end.tap { |ops| ops << proc { @redis.del current_values_name } }
       end
     end

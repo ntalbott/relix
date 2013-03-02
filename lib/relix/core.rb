@@ -25,6 +25,10 @@ module Relix
     def lookup(&block)
       relix.lookup(&block)
     end
+
+    def deindex_by_primary_key!(pk)
+      relix.deindex_by_primary_key!(pk)
+    end
   end
 
   def relix

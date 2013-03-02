@@ -11,7 +11,7 @@ module Relix
       r.zrem(key_for(old_value), pk)
     end
 
-    def deindex(r, pk, object, old_value)
+    def deindex(r, pk, old_value)
       r.zrem(key_for(old_value), pk)
     end
 
