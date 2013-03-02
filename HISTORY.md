@@ -1,3 +1,7 @@
+### 1.4.1
+
+* Fix double #deindex_by_primary_key when there's a multi index. (ntalbott)
+
 ### 1.4.0
 
 * Add #deindex_by_primary_key. (ntalbott)

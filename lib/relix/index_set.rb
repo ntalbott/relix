@@ -112,7 +112,7 @@ module Relix
             current_values[name]
           end
 
-          ((watch = index.watch(old_value)) && @redis.watch(*watch))
+          ((watch = index.watch(old_value)) && !watch.empty? && @redis.watch(*watch))
           proc { index.deindex(@redis, pk, old_value) }
         end.tap { |ops| ops << proc { @redis.del current_values_name } }
       end
@@ -127,7 +127,7 @@ module Relix
         indexes.map do |name, index|
           old_value = current_values[name]
 
-          ((watch = index.watch(old_value)) && @redis.watch(*watch))
+          ((watch = index.watch(old_value)) && !watch.empty? && @redis.watch(*watch))
           proc { index.deindex(@redis, pk, old_value) }
         end.tap { |ops| ops << proc { @redis.del current_values_name } }
       end
@@ -173,7 +173,7 @@ module Relix
         end
       end
     rescue Redis::CommandError => e
-      raise RedisIndexingError.new(e.message)
+      raise RedisIndexingError, e.message, e.backtrace
     end
 
     def primary_key_for(object)
