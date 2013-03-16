@@ -1,3 +1,7 @@
+### 1.5.0
+
+* Add special handling for interrogative methods. (ntalbott)
+
 ### 1.4.1
 
 * Fix double #deindex_by_primary_key when there's a multi index. (ntalbott)

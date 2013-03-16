@@ -127,4 +127,44 @@ class IndexingTest < RelixTest
     object.deindex!
     assert_equal %w(), klass.lookup { |q| q[:other].eq("foo") }
   end
+
+  def test_indexing_interrogative_method
+    klass = Class.new do
+      include Relix
+      relix do
+        primary_key :key
+        multi :other, on: :other?
+      end
+
+      attr_accessor :key
+      attr_writer :other
+
+      def other?
+        @other
+      end
+    end
+
+    object = klass.new
+    object.key = 1
+    object.other = true
+    object.index!
+
+    object = klass.new
+    object.key = 2
+    object.other = nil
+    object.index!
+
+    object = klass.new
+    object.key = 3
+    object.other = false
+    object.index!
+
+    object = klass.new
+    object.key = 4
+    object.other = "bob"
+    object.index!
+
+    assert_equal %w(1 4), klass.lookup { |q| q[:other].eq(true) }
+    assert_equal %w(2 3), klass.lookup { |q| q[:other].eq(false) }
+  end
 end

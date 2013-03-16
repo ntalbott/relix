@@ -130,7 +130,6 @@ The from option is exclusive - it does not return or count the key you pass to i
 
 Indexes are inherited up the Ruby ancestor chain, so you can for instance set the primary_key in a base class and then not have to re-declare it in each subclass.
 
-
 ### Multiple Value Indexes
 
 Indexes can be built over multiple attributes:
@@ -145,6 +144,22 @@ When there are multiple attributes, they are specified in a hash:
       q[:storage_state_by_account].eq(
         {storage_state: 'cached', account_id: 'bob'}, limit: 10)
     end
+
+### Interrogative Accessors
+
+Relix has some special handling for interrogative accessors (i.e. those ending with a `?`). When one is used, Relix is smart and does not require the `?` when querying:
+
+    class Account
+      include Relix
+      relix do
+        primary_key :key
+        multi :active_and_admin, on: %w(active? admin?)
+      end
+    end
+
+    accounts = Account.lookup{|q| q[:active_and_admin].eq(active: true, admin: true)}
+
+It also auto-casts `nil` to `false` and any other object to `true` for interrogative accessors, so that lookups work like you'd expect them to in a Ruby context. If you don't want to auto-casting, just alias your interrogative to a non-interrogative name and index on that instead.
 
 ### Space efficiency
 

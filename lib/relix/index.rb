@@ -8,13 +8,32 @@ module Relix
       @compact_kind ||= kind[0..0]
     end
 
+    class Accessor
+      attr_reader :identifier
+      def initialize(name)
+        @accessor = name.to_s
+        if @accessor =~ /^(.+)\?$/
+          @identifier = $1
+          @interrogative = true
+        else
+          @identifier = @accessor
+        end
+      end
+
+      def read(object)
+        result = object.send(@accessor)
+        result = !!result if @interrogative
+        result
+      end
+    end
+
     attr_reader :model_name
-    def initialize(set, base_name, accessor, options={})
+    def initialize(set, base_name, accessors, options={})
       @set = set
       @base_name = base_name
       @model_name = @set.klass.name
-      @accessor = [accessor].flatten.collect{|a| a.to_s}
-      @attribute_immutable = !!options[:immutable_attribute]
+      @accessors = Array(accessors).collect{|a| Accessor.new(a)}
+      @attribute_immutable = options[:immutable_attribute]
       @options = options
     end
 
@@ -23,7 +42,7 @@ module Relix
     end
 
     def read(object)
-      @accessor.inject({}){|h,e| h[e] = object.send(e); h}
+      @accessors.inject({}){|h,e| h[e.identifier] = e.read(object); h}
     end
 
     def read_normalized(object)
@@ -35,13 +54,13 @@ module Relix
       when Hash
         value.inject({}){|h, (k,v)| h[k.to_s] = v; h}
       else
-        {@accessor.first => value}
+        {@accessors.first.identifier => value}
       end
-      @accessor.collect do |k|
-        if value_hash.include?(k)
-          value_hash[k].to_s
+      @accessors.collect do |accessor|
+        if value_hash.include?(accessor.identifier)
+          value_hash[accessor.identifier].to_s
         else
-          raise MissingIndexValueError, "Missing #{k} when looking up by #{name}"
+          raise MissingIndexValueError, "Missing #{accessor.identifier} when looking up by #{name}"
         end
       end.join(":")
     end
