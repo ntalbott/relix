@@ -25,16 +25,16 @@ class KeyingTest < RelixTest
       @m.relix.primary_key_index.name
 
     assert_equal "Relix::UniqueIndex:TestModel:email",
-      @m.relix.indexes['email'].name
+      @m.relix['email'].name
     assert_equal "Relix::UniqueIndex:TestModel:email:hash",
-      @m.relix.indexes['email'].hash_name
+      @m.relix['email'].hash_name
     assert_equal "Relix::UniqueIndex:TestModel:email:zset",
-      @m.relix.indexes['email'].sorted_set_name
+      @m.relix['email'].sorted_set_name
 
     assert_equal "Relix::MultiIndex:TestModel:parent:fred",
-      @m.relix.indexes['parent'].key_for('fred')
+      @m.relix['parent'].key_for('fred')
     assert_equal "Relix::MultiIndex:TestModel:parent",
-      @m.relix.indexes['parent'].name
+      @m.relix['parent'].name
   end
 
   def test_standard_keys
@@ -46,16 +46,16 @@ class KeyingTest < RelixTest
       @m.relix.primary_key_index.name
 
     assert_equal "TestModel:email:unique",
-      @m.relix.indexes['email'].name
+      @m.relix['email'].name
     assert_equal "TestModel:email:unique:lookup",
-      @m.relix.indexes['email'].hash_name
+      @m.relix['email'].hash_name
     assert_equal "TestModel:email:unique:ordering",
-      @m.relix.indexes['email'].sorted_set_name
+      @m.relix['email'].sorted_set_name
 
     assert_equal "TestModel:parent:multi:fred",
-      @m.relix.indexes['parent'].key_for('fred')
+      @m.relix['parent'].key_for('fred')
     assert_equal "TestModel:parent:multi",
-      @m.relix.indexes['parent'].name
+      @m.relix['parent'].name
   end
 
   def test_compact_keys_with_string
@@ -67,16 +67,16 @@ class KeyingTest < RelixTest
       @m.relix.primary_key_index.name
 
     assert_equal "TM:email:u",
-      @m.relix.indexes['email'].name
+      @m.relix['email'].name
     assert_equal "TM:email:u:lookup",
-      @m.relix.indexes['email'].hash_name
+      @m.relix['email'].hash_name
     assert_equal "TM:email:u:ordering",
-      @m.relix.indexes['email'].sorted_set_name
+      @m.relix['email'].sorted_set_name
 
     assert_equal "TM:parent:m:fred",
-      @m.relix.indexes['parent'].key_for('fred')
+      @m.relix['parent'].key_for('fred')
     assert_equal "TM:parent:m",
-      @m.relix.indexes['parent'].name
+      @m.relix['parent'].name
   end
 
   def test_compact_keys_with_proc
@@ -90,16 +90,16 @@ class KeyingTest < RelixTest
       @m.relix.primary_key_index.name
 
     assert_equal "Tes:email:u",
-      @m.relix.indexes['email'].name
+      @m.relix['email'].name
     assert_equal "Tes:email:u:lookup",
-      @m.relix.indexes['email'].hash_name
+      @m.relix['email'].hash_name
     assert_equal "Tes:email:u:ordering",
-      @m.relix.indexes['email'].sorted_set_name
+      @m.relix['email'].sorted_set_name
 
     assert_equal "Tes:parent:m:fred",
-      @m.relix.indexes['parent'].key_for('fred')
+      @m.relix['parent'].key_for('fred')
     assert_equal "Tes:parent:m",
-      @m.relix.indexes['parent'].name
+      @m.relix['parent'].name
   end
 
   def test_keyer_inheritance
@@ -123,27 +123,27 @@ class KeyingTest < RelixTest
     assert_equal "Relix::PrimaryKeyIndex:parent:primary_key",
       child.relix.primary_key_index.name
     assert_equal "Relix::UniqueIndex:child:email",
-      child.relix.indexes['email'].name
+      child.relix['email'].name
 
     parent.relix.keyer(Relix::Keyer::Standard)
     assert_equal "parent:values:1", child.relix.current_values_name("1")
     assert_equal "parent:key:primary_key",
       child.relix.primary_key_index.name
     assert_equal "child:email:unique",
-      child.relix.indexes['email'].name
+      child.relix['email'].name
 
     child.relix.keyer(Relix::Keyer::Legacy)
     assert_equal "child:current_values:1", child.relix.current_values_name("1")
     assert_equal "parent:key:primary_key",
       child.relix.primary_key_index.name
     assert_equal "Relix::UniqueIndex:child:email",
-      child.relix.indexes['email'].name
+      child.relix['email'].name
 
     child.relix.keyer(Relix::Keyer::Standard)
     assert_equal "child:values:1", child.relix.current_values_name("1")
     assert_equal "parent:key:primary_key",
       child.relix.primary_key_index.name
     assert_equal "child:email:unique",
-      child.relix.indexes['email'].name
+      child.relix['email'].name
   end
 end

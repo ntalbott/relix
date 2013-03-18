@@ -2,6 +2,7 @@
 
 * Require Redis 2.6. (ntalbott)
 * Add deprecation support. (ntalbott)
+* Add proper API for accessing indexes by name. (ntalbott)
 
 ### 1.5.0
 

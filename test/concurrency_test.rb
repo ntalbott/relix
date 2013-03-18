@@ -133,7 +133,7 @@ class ConcurrencyTest < RelixTest
     model.thing = "other"
     model.index!
 
-    expected_keys = %w[ original other ].map { |v| @m.relix.indexes['thing'].key_for(v) }
+    expected_keys = %w[ original other ].map { |v| @m.relix['thing'].key_for(v) }
     missing_keys = expected_keys - watched_keys
     assert_equal [], missing_keys
   end

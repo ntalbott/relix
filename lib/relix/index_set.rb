@@ -47,7 +47,8 @@ module Relix
     end
 
     def indexes
-      (parent ? parent.indexes.merge(@indexes) : @indexes)
+      Relix.deprecate("Calling #indexes is deprecated; use #[] instead.", "2")
+      self
     end
 
     def lookup(&block)
@@ -65,7 +66,7 @@ module Relix
       @redis.watch current_values_name
       current_values = @redis.hgetall(current_values_name)
 
-      ops = indexes.collect do |name,index|
+      ops = full_index_list.collect do |name,index|
         value = index.read_normalized(object)
         old_value = current_values[name]
 
@@ -105,7 +106,7 @@ module Relix
         @redis.watch current_values_name
         current_values = @redis.hgetall(current_values_name)
 
-        indexes.map do |name, index|
+        full_index_list.map do |name, index|
           old_value = if index.attribute_immutable?
             index.read_normalized(object)
           else
@@ -124,7 +125,7 @@ module Relix
         @redis.watch current_values_name
         current_values = @redis.hgetall(current_values_name)
 
-        indexes.map do |name, index|
+        full_index_list.map do |name, index|
           old_value = current_values[name]
 
           ((watch = index.watch(old_value)) && !watch.empty? && @redis.watch(*watch))
@@ -149,7 +150,17 @@ module Relix
       keyer.values(pk, @klass)
     end
 
-  private
+    def [](name)
+      full_index_list[name.to_s]
+    end
+
+    protected
+
+    def full_index_list
+      (parent ? parent.full_index_list.merge(@indexes) : @indexes)
+    end
+
+    private
 
     def handle_concurrent_modifications(primary_key)
       retries = 5

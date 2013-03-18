@@ -15,6 +15,13 @@ class DeprecationTest < RelixTest
     end
   end
 
+  def test_deprecated_indexes
+    stderr = capture_stderr do
+      Relix::IndexSet.new(Object, nil).indexes
+    end
+    assert_equal "Calling #indexes is deprecated; use #[] instead.\n", stderr
+  end
+
   def capture_stderr
     old_stderr = $stderr
     $stderr = StringIO.new
