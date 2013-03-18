@@ -44,7 +44,7 @@ class PerformanceTest < RelixTest
       end
     end
 
-    assert_time 50, profiling: 'lookup', delta: 15 do
+    assert_time 60, profiling: 'lookup', delta: 20 do
       m.lookup{|q| q[:sortme].all}
     end
   end
