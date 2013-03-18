@@ -2,5 +2,4 @@ vendor/ruby
 .bundle
 Gemfile.lock
 *.rdb
-*.sublime-workspace
 *.gem
