@@ -1,4 +1,4 @@
-### master
+### 2.0.0
 
 * Require Redis 2.6. (ntalbott)
 * Add deprecation support. (ntalbott)
