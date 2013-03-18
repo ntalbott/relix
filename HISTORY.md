@@ -1,3 +1,7 @@
+### master
+
+* Require Redis 2.6. (ntalbott)
+
 ### 1.5.0
 
 * Add special handling for interrogative methods. (ntalbott)

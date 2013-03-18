@@ -36,6 +36,8 @@ You can configure the Redis host, port and db like so:
     Relix.port = 10000
     Relix.db   = 5
 
+Relix requires Redis 2.6 or later.
+
 
 ## Usage
 

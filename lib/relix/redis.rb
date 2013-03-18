@@ -15,6 +15,10 @@ module Relix
 
   def self.new_redis_client
     ::Redis.new(host: @redis_host, port: @redis_port).tap do |client|
+      version = client.info["redis_version"]
+      if(Relix::Version.new(version) < Relix::REDIS_VERSION)
+        raise UnsupportedRedisVersion.new("Relix requires Redis >= #{Relix::REDIS_VERSION}; you have #{version}.")
+      end
       client.select @redis_db if @redis_db
     end
   end
@@ -30,4 +34,6 @@ module Relix
   def self.db=(value)
     @redis_db = value
   end
+
+  class UnsupportedRedisVersion < Exception; end
 end
