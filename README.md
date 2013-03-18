@@ -211,6 +211,24 @@ Multi indexes allow multiple matching primary keys per indexed value, and are id
 **Supported Operators**: eq
 **Ordering**: can be ordered on any numeric attribute (default is the to_i of the indexed value)
 
+#### Values
+
+If you declare the correct option, it's possible to pull the set of values that are being indexed on as well:
+
+    relix.multi :account_id, index_values: true
+
+    # Enables this call
+    relix.lookup_values(:account_id)
+
+This will yield all of the `account_ids` being indexed on, rather than the set of keys indexed by a particular set of `account_ids`. A typical use case would be fast iteration over grouped sub-models of a `many` relationship:
+
+    User.lookup_values(:account_id).each do |account_id|
+      users_for_account = User.lookup{|q| q[:account_id].eq(account_id)}
+      # Aggregate processing for the users in the account
+    end
+
+The ordering of returned values is undefined.
+
 ### UniqueIndex
 
 Unique indexes will raise an error if the same value is indexed twice for a different primary key. They also provide super fast lookups. They are declared using #unique in the relix block:

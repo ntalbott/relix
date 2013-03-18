@@ -31,4 +31,31 @@ class MultiIndexTest < RelixTest
   def test_limit_of_zero
     assert_equal [], Person.lookup{|q| q[:family_key].eq(@talbott_family.key, limit: 0)}
   end
+
+  def test_index_values
+    assert_equal %w(talbott omelia).sort, Person.lookup_values(:family_key).sort
+  end
+
+  def test_values_not_indexed
+    model = Class.new do
+      include Relix
+      relix.multi :to_s
+    end
+
+    assert_raise Relix::ValuesNotIndexedError do
+      model.lookup_values(:to_s)
+    end
+  end
+
+  def test_values_deindexed
+    @talbotts[0..-2].each{|t| t.delete}
+    assert_equal %w(talbott omelia).sort, Person.lookup_values(:family_key).sort
+
+    @talbotts[-1].delete
+    assert_equal %w(omelia).sort, Person.lookup_values(:family_key).sort
+
+    @talbotts[0].index!
+    @talbotts[0].index!
+    assert_equal %w(talbott omelia).sort, Person.lookup_values(:family_key).sort
+  end
 end

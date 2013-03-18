@@ -61,6 +61,10 @@ module Relix
       end
     end
 
+    def lookup_values(index)
+      self[index].values(@redis)
+    end
+
     def index_ops(object, pk)
       current_values_name = current_values_name(pk)
       @redis.watch current_values_name

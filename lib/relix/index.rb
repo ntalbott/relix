@@ -135,4 +135,5 @@ module Relix
 
   class UnorderableValueError < Relix::Error; end
   class MissingIndexValueError < Relix::Error; end
+  class ValuesNotIndexedError < Relix::Error; end
 end

@@ -18,7 +18,7 @@ class Person
   include Relix
   relix do
     primary_key :key
-    multi :family_key, order: :birthyear
+    multi :family_key, order: :birthyear, index_values: true
     unique :by_birthyear, on: :key, order: :birthyear
     ordered :birthyear
   end
