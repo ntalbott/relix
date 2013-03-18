@@ -6,8 +6,8 @@ module Relix
     include Comparable
 
     attr_reader :major, :minor, :patch
-    def initialize(string)
-      @major, @minor, @patch = string.split(".").collect{|e| e.to_i}
+    def initialize(version)
+      @major, @minor, @patch = version.to_s.split(".").collect{|e| e.to_i}
       @minor ||= 0
       @patch ||= 0
     end
@@ -27,4 +27,16 @@ module Relix
       end
     end
   end
+
+  def self.deprecate(message, as_of_version)
+    as_of_version = Version.new(as_of_version)
+
+    if Version.new(VERSION).major > as_of_version.major
+      raise DeprecationError.new(message)
+    else
+      $stderr.puts(message)
+    end
+  end
+
+  class DeprecationError < Exception; end
 end
