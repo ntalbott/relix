@@ -2,11 +2,15 @@ module Relix
   class IndexSet
     attr_accessor :redis
     attr_reader :klass
-    def initialize(klass, redis)
+    def initialize(klass, redis_source)
       @klass = klass
-      @redis = redis
+      @redis_source = redis_source
       @indexes = Hash.new
       @keyer = Keyer.default_for(@klass) unless parent
+    end
+
+    def redis
+      @redis ||= @redis_source.redis
     end
 
     def primary_key(accessor)
@@ -57,38 +61,38 @@ module Relix
         yield(query)
         query.run
       else
-        primary_key_index.all(@redis)
+        primary_key_index.all(redis)
       end
     end
 
     def lookup_values(index)
-      self[index].values(@redis)
+      self[index].values(redis)
     end
 
     def index_ops(object, pk)
       current_values_name = current_values_name(pk)
-      @redis.watch current_values_name
-      current_values = @redis.hgetall(current_values_name)
+      redis.watch current_values_name
+      current_values = redis.hgetall(current_values_name)
 
       ops = full_index_list.collect do |name,index|
         value = index.read_normalized(object)
         old_value = current_values[name]
 
-        ((watch = index.watch(value, old_value)) && @redis.watch(*watch))
+        ((watch = index.watch(value, old_value)) && redis.watch(*watch))
 
         next if value == old_value
         current_values[name] = value unless index.attribute_immutable?
 
-        next unless index.filter(@redis, object, value)
+        next unless index.filter(redis, object, value)
 
-        query_value = index.query(@redis, value)
+        query_value = index.query(redis, value)
         proc do
-          index.index(@redis, pk, object, value, old_value, *query_value)
+          index.index(redis, pk, object, value, old_value, *query_value)
         end
       end.compact
 
       ops << proc do
-        @redis.hmset(current_values_name, *current_values.flatten)
+        redis.hmset(current_values_name, *current_values.flatten)
       end if current_values.any?
 
       ops
@@ -107,8 +111,8 @@ module Relix
 
       handle_concurrent_modifications(pk) do
         current_values_name = current_values_name(pk)
-        @redis.watch current_values_name
-        current_values = @redis.hgetall(current_values_name)
+        redis.watch current_values_name
+        current_values = redis.hgetall(current_values_name)
 
         full_index_list.map do |name, index|
           old_value = if index.attribute_immutable?
@@ -117,24 +121,24 @@ module Relix
             current_values[name]
           end
 
-          ((watch = index.watch(old_value)) && !watch.empty? && @redis.watch(*watch))
-          proc { index.deindex(@redis, pk, old_value) }
-        end.tap { |ops| ops << proc { @redis.del current_values_name } }
+          ((watch = index.watch(old_value)) && !watch.empty? && redis.watch(*watch))
+          proc { index.deindex(redis, pk, old_value) }
+        end.tap { |ops| ops << proc { redis.del current_values_name } }
       end
     end
 
     def deindex_by_primary_key!(pk)
       handle_concurrent_modifications(pk) do
         current_values_name = current_values_name(pk)
-        @redis.watch current_values_name
-        current_values = @redis.hgetall(current_values_name)
+        redis.watch current_values_name
+        current_values = redis.hgetall(current_values_name)
 
         full_index_list.map do |name, index|
           old_value = current_values[name]
 
-          ((watch = index.watch(old_value)) && !watch.empty? && @redis.watch(*watch))
-          proc { index.deindex(@redis, pk, old_value) }
-        end.tap { |ops| ops << proc { @redis.del current_values_name } }
+          ((watch = index.watch(old_value)) && !watch.empty? && redis.watch(*watch))
+          proc { index.deindex(redis, pk, old_value) }
+        end.tap { |ops| ops << proc { redis.del current_values_name } }
       end
     end
 
@@ -171,7 +175,7 @@ module Relix
       loop do
         ops = yield
 
-        results = @redis.multi do
+        results = redis.multi do
           ops.each do |op|
             op.call(primary_key)
           end

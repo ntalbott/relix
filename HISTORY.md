@@ -1,3 +1,7 @@
+### 2.1.0
+
+* Make IndexSet lazy-retrieve the Redis client. (ntalbott)
+
 ### 2.0.0
 
 * Require Redis 2.6. (ntalbott)
