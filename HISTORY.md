@@ -1,3 +1,7 @@
+### 2.2.0
+
+* Add index removal. (ntalbott)
+
 ### 2.1.0
 
 * Make IndexSet lazy-retrieve the Redis client. (ntalbott)
