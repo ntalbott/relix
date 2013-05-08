@@ -58,4 +58,46 @@ class MultiIndexTest < RelixTest
     @talbotts[0].index!
     assert_equal %w(talbott omelia).sort, Person.lookup_values(:family_key).sort
   end
+
+  def test_index_destruction
+    original_klass = Class.new do
+      include Relix
+      relix do
+        primary_key :key
+        multi :other
+      end
+      attr_accessor :key, :other
+
+      def self.name; "MyKlass"; end
+    end
+
+    object1 = original_klass.new
+    object1.key = 1
+    object1.other = "foo"
+    object1.index!
+
+    object2 = original_klass.new
+    object2.key = 2
+    object2.other = "bar"
+    object2.index!
+
+    klass = Class.new do
+      include Relix
+      relix do
+        primary_key :key
+        obsolete{multi :other}
+      end
+      attr_accessor :key, :other
+
+      def self.name; "MyKlass"; end
+    end
+
+    klass.relix.destroy_index(:other)
+
+    assert_equal 2, klass.lookup.count
+    assert_equal [], Relix.redis.hgetall(klass.relix.current_values_name("1")).keys
+    assert_equal [], Relix.redis.hgetall(klass.relix.current_values_name("2")).keys
+
+    assert_equal 0, Relix.redis.keys("*other*").size, Relix.redis.keys("*other*")
+  end
 end

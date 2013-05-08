@@ -1,5 +1,7 @@
 require 'test_helper'
 
+require 'date'
+
 class OrderedIndexTest < RelixTest
   include FamilyFixture
 
@@ -93,5 +95,47 @@ class OrderedIndexTest < RelixTest
     before_record = klass.new("before", Date.new(2011, 8, 3))
     after_record = klass.new("after", Date.new(2011, 9, 3))
     assert_equal %w(before), klass.lookup { |q| q[:date].lt(Date.new(2011, 8, 15)) }
+  end
+
+  def test_index_destruction
+    original_klass = Class.new do
+      include Relix
+      relix do
+        primary_key :key
+        ordered :other
+      end
+      attr_accessor :key, :other
+
+      def self.name; "MyKlass"; end
+    end
+
+    object1 = original_klass.new
+    object1.key = 1
+    object1.other = 1
+    object1.index!
+
+    object2 = original_klass.new
+    object2.key = 2
+    object2.other = 2
+    object2.index!
+
+    klass = Class.new do
+      include Relix
+      relix do
+        primary_key :key
+        obsolete{ordered :other}
+      end
+      attr_accessor :key, :other
+
+      def self.name; "MyKlass"; end
+    end
+
+    klass.relix.destroy_index(:other)
+
+    assert_equal 2, klass.lookup.count
+    assert_equal [], Relix.redis.hgetall(klass.relix.current_values_name("1")).keys
+    assert_equal [], Relix.redis.hgetall(klass.relix.current_values_name("2")).keys
+
+    assert_equal 0, Relix.redis.keys("*other*").size, Relix.redis.keys("*other*")
   end
 end

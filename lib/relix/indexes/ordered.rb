@@ -23,6 +23,10 @@ module Relix
       r.zrem(sorted_set_name, pk)
     end
 
+    def destroy_all(r)
+      r.del(sorted_set_name)
+    end
+
     def create_query_clause(redis)
       QueryClause.new(redis, self)
     end

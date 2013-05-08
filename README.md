@@ -296,3 +296,28 @@ Keys take up space, and especially since Redis holds the keyset in memory it can
 ### Legacy
 
 This (eventually to be deprecated and removed) strategy exactly mirrors the keying supported by Relix when first released.
+
+
+## Maintenance
+
+### Index removal
+
+Sometimes an index is no longer needed, or is being moved or renamed, and you'll want to clean up the old index data including both the index itself as well as the current values that are tracked for that index.
+
+To remove an index, first change its declaration like so:
+
+    class Transaction
+      relix do
+        obsolete{:multi, :account_key, order: :created_at}
+      end
+    end
+
+This just wraps the original index declaration in an `obsolete` block. Doing this makes it so that the index is no longer updated (though it will still deindex), and also marks the index for removal within Relix.
+
+Second, run `destroy_index` on the index:
+
+    Transaction.relix.destroy_index(:account_key)
+
+This will remove all related data from Redis. Note that `destroy_index` is idempotent, so while it's not recommended you run it multiple times (it iterates through the whole primary key space), it won't hurt anything if you do.
+
+And finally: just delete the whole `obsolete` line from your relix declaration. The index is now dead - long live the index!

@@ -6,6 +6,7 @@ module Relix
       @klass = klass
       @redis_source = redis_source
       @indexes = Hash.new
+      @obsolete_indexes = Hash.new
       @keyer = Keyer.default_for(@klass) unless parent
     end
 
@@ -46,8 +47,63 @@ module Relix
     end
 
     def add_index(index_type, name, options={})
-      accessor = (options.delete(:on) || name)
-      @indexes[name.to_s] = Relix.index_types[index_type].new(self, name, accessor, options)
+      raise Relix::InvalidIndexError.new("Index #{name} is already declared as obsolete.") if @obsolete_indexes[name.to_s]
+
+      @indexes[name.to_s] = create_index(self, index_type, name, options)
+    end
+
+    class Obsolater
+      def initialize(index_set)
+        @index_set = index_set
+      end
+
+      def method_missing(m, *args)
+        if Relix.index_types.keys.include?(m.to_sym)
+          @index_set.add_obsolete_index(m, *args)
+        else
+          raise ArgumentError.new("Unknown index type #{m}.")
+        end
+      end
+    end
+
+    def obsolete(&block)
+      raise ArgumentError.new("No block passed.") unless block_given?
+
+      Obsolater.new(self).instance_eval(&block)
+    end
+
+    def add_obsolete_index(index_type, name, options={})
+      raise Relix::InvalidIndexError.new("Primary key indexes cannot be obsoleted.") if(index_type == :primary_key)
+      raise Relix::InvalidIndexError.new("Index #{name} is already declared as non-obsolete.") if @indexes[name.to_s]
+
+      @obsolete_indexes[name.to_s] = create_index(self, index_type, name, options)
+    end
+
+    def destroy_index(name)
+      name = name.to_s
+      index = @obsolete_indexes[name]
+      raise MissingIndexError.new("No obsolete index found for #{name}.") unless index
+      raise InvalidIndexError.new("Indexes built on immutable attributes cannot be destroyed.") if index.attribute_immutable?
+
+      lookup.each do |pk|
+        handle_concurrent_modifications(pk) do
+          current_values_name = current_values_name(pk)
+          redis.watch current_values_name
+          current_values = redis.hgetall(current_values_name)
+
+          old_value = current_values[name]
+
+          ((watch = index.watch(old_value)) && !watch.empty? && redis.watch(*watch))
+          ops = []
+          ops << proc{ index.destroy(redis, pk, old_value) } if index.respond_to?(:destroy)
+          ops << proc{ redis.hdel current_values_name, name }
+          ops
+        end
+      end
+
+      if index.respond_to?(:destroy_all)
+        index.destroy_all(redis)
+      end
     end
 
     def indexes
@@ -114,7 +170,7 @@ module Relix
         redis.watch current_values_name
         current_values = redis.hgetall(current_values_name)
 
-        full_index_list.map do |name, index|
+        full_index_list(:including_obsolete).map do |name, index|
           old_value = if index.attribute_immutable?
             index.read_normalized(object)
           else
@@ -133,7 +189,7 @@ module Relix
         redis.watch current_values_name
         current_values = redis.hgetall(current_values_name)
 
-        full_index_list.map do |name, index|
+        full_index_list(:including_obsolete).map do |name, index|
           old_value = current_values[name]
 
           ((watch = index.watch(old_value)) && !watch.empty? && redis.watch(*watch))
@@ -164,11 +220,20 @@ module Relix
 
     protected
 
-    def full_index_list
-      (parent ? parent.full_index_list.merge(@indexes) : @indexes)
+    def full_index_list(including_obsolete=false)
+      list = (parent ? parent.full_index_list.merge(@indexes) : @indexes)
+      if including_obsolete
+        list = @obsolete_indexes.merge(list)
+      end
+      list
     end
 
     private
+
+    def create_index(index_set, index_type, name, options)
+      accessor = (options.delete(:on) || name)
+      Relix.index_types[index_type].new(index_set, name, accessor, options)
+    end
 
     def handle_concurrent_modifications(primary_key)
       retries = 5
@@ -203,4 +268,5 @@ module Relix
   class MissingPrimaryKeyError < Relix::Error; end
   class RedisIndexingError < Relix::Error; end
   class ExceededRetriesForConcurrentWritesError < Relix::Error; end
+  class InvalidIndexError < Relix::Error; end
 end

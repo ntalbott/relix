@@ -20,6 +20,11 @@ module Relix
       deindex_value(r, old_value) if index_values?
     end
 
+    def destroy(r, pk, old_value)
+      r.del(key_for(old_value))
+      r.destroy_values(r) if index_values?
+    end
+
     def eq(r, value, options={})
       r.zrange(key_for(value), *range_from_options(r, options, value))
     end
@@ -58,6 +63,10 @@ module Relix
         end
         return "OK"
       ), [values_key, key_for(old_value)], [old_value]
+    end
+
+    def destroy_value(r)
+      r.del(values_key)
     end
   end
   register_index MultiIndex

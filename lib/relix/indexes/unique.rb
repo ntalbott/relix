@@ -38,6 +38,11 @@ module Relix
       r.zrem(sorted_set_name, pk)
     end
 
+    def destroy_all(r)
+      r.del(hash_name)
+      r.del(sorted_set_name)
+    end
+
     def all(r, options={})
       r.zrange(sorted_set_name, *range_from_options(r, options))
     end
