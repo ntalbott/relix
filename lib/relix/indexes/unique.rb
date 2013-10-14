@@ -14,8 +14,9 @@ module Relix
       hash_name
     end
 
-    def filter(r, object, value)
-      if r.hexists(hash_name, value)
+    def filter(r, pk, object, value)
+      v = r.hget(hash_name, value)
+      if(v && (v != pk))
         raise NotUniqueError.new("'#{value}' is not unique in index #{name}")
       end
       super

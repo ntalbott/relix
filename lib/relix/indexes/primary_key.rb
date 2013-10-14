@@ -11,7 +11,7 @@ module Relix
       name
     end
 
-    def filter(r, object, value)
+    def filter(r, pk, object, value)
       !r.zscore(name, value)
     end
 

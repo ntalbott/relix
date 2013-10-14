@@ -140,7 +140,7 @@ module Relix
         if index.index?(redis, object, value)
           new_current_values[name] = value unless index.attribute_immutable?
           next if value == old_value
-          next unless index.filter(redis, object, value)
+          next unless index.filter(redis, pk, object, value)
 
           query_value = index.query(redis, value)
           proc do

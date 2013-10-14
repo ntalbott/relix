@@ -1,3 +1,7 @@
+### 2.3.2
+
+* Make uniqueness check more robust (ntalbott)
+
 ### 2.3.1
 
 * Fix current_values not being written out (ntalbott)
