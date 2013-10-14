@@ -15,11 +15,15 @@ module Relix
     end
 
     def filter(r, object, value)
-      return true if read(object).values.any?{|e| e.nil?}
       if r.hexists(hash_name, value)
         raise NotUniqueError.new("'#{value}' is not unique in index #{name}")
       end
-      true
+      super
+    end
+
+    def index?(r, object, value)
+      return false if read(object).values.any?{|e| e.nil?}
+      super
     end
 
     def index(r, pk, object, value, old_value)

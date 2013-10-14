@@ -1,10 +1,10 @@
-system("redis-cli -p 10000 SHUTDOWN 2>&1") if(`redis-cli -p 10000 PING 2>&1` =~ /PONG/)
+system("redis-cli -p 20000 SHUTDOWN 2>&1") if(`redis-cli -p 20000 PING 2>&1` =~ /PONG/)
 system("redis-server #{File.expand_path('..', __FILE__)}/redis.conf")
 
 require 'test/unit'
 
 require 'relix'
-Relix.port = 10000
+Relix.port = 20000
 
 require 'fixtures/family_fixture'
 

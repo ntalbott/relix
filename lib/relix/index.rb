@@ -34,6 +34,7 @@ module Relix
       @model_name = @set.klass.name
       @accessors = Array(accessors).collect{|a| Accessor.new(a)}
       @attribute_immutable = options[:immutable_attribute]
+      @conditional = options[:if]
       @options = options
     end
 
@@ -75,6 +76,10 @@ module Relix
 
     def filter(r, object, value)
       true
+    end
+
+    def index?(r, object, value)
+      (@conditional ? object.send(@conditional) : true)
     end
 
     def query(r, value)

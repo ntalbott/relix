@@ -129,6 +129,7 @@ module Relix
       current_values_name = current_values_name(pk)
       redis.watch current_values_name
       current_values = redis.hgetall(current_values_name)
+      new_current_values = {}
 
       ops = full_index_list.collect do |name,index|
         value = index.read_normalized(object)
@@ -136,20 +137,31 @@ module Relix
 
         ((watch = index.watch(value, old_value)) && redis.watch(*watch))
 
-        next if value == old_value
-        current_values[name] = value unless index.attribute_immutable?
+        if index.index?(redis, object, value)
+          next if value == old_value
+          next unless index.filter(redis, object, value)
 
-        next unless index.filter(redis, object, value)
-
-        query_value = index.query(redis, value)
-        proc do
-          index.index(redis, pk, object, value, old_value, *query_value)
+          new_current_values[name] = value unless index.attribute_immutable?
+          query_value = index.query(redis, value)
+          proc do
+            index.index(redis, pk, object, value, old_value, *query_value)
+          end
+        else
+          proc do
+            index.deindex(redis, pk, old_value)
+          end
         end
       end.compact
 
-      ops << proc do
-        redis.hmset(current_values_name, *current_values.flatten)
-      end if current_values.any?
+      if new_current_values.any?
+        ops << proc do
+          redis.hmset(current_values_name, *new_current_values.flatten)
+        end
+      elsif current_values.any?
+        ops << proc do
+          redis.del(current_values_name)
+        end
+      end
 
       ops
     end

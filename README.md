@@ -163,6 +163,24 @@ Relix has some special handling for interrogative accessors (i.e. those ending w
 
 It also auto-casts `nil` to `false` and any other object to `true` for interrogative accessors, so that lookups work like you'd expect them to in a Ruby context. If you don't want to auto-casting, just alias your interrogative to a non-interrogative name and index on that instead.
 
+### Conditional Indexing
+
+Relix allows you to decide on a per-object basis whether a given index should be built:
+
+    class Person
+      include Relix
+      relix do
+        primary_key :key
+        multi :name, on: %w(first last), if: full_name?
+      end
+
+      def full_name?
+        (first && last)
+      end
+    end
+
+People will only be indexed now if they have both a first and a last name, otherwise they will not be included in the index at all. Note that this is also smart enough to deindex an object if its condition changes.
+
 ### Space efficiency
 
 Model attributes that are indexed on but that never change can be marked as immutable to prevent them being stored (since they don't have to be reindexed). The primary key is marked immutable by default, but other attributes can be as well:

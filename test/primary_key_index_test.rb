@@ -14,6 +14,12 @@ class PrimaryKeyIndexTest < RelixTest
     assert_equal [], Person.lookup{|q| q[:family_key].eq(@talbott_family.key)}
   end
 
+  def test_index_twice_with_same_primary_key
+    first = @talbotts.first
+    first.index!
+    assert Person.lookup.include?(first.key)
+  end
+
   def test_deindex
     assert Person.lookup.include?(@nathaniel.key), "expected index to include Nathaniel's key"
     @nathaniel.delete

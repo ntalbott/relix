@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+
+cd $(dirname "$0")/..
+
+set -e
+
+bundle exec testrb -Itest:lib test/*_test.rb

@@ -1,3 +1,8 @@
+### 2.3.0
+
+* Add conditional indexing. (ntalbott)
+* Re-build current_values on each index run. (ntalbott)
+
 ### 2.2.0
 
 * Add index removal. (ntalbott)
