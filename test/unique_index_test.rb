@@ -44,6 +44,17 @@ class UniqueIndexTest < RelixTest
     end
     assert_equal [], @m.lookup{|q| q[:email].eq(nil)}
     assert_equal [], @m.lookup{|q| q[:email].eq("fred@example.com")}
+
+    assert_nothing_raised do
+      @m.new("1", "fred@example.com")
+    end
+    assert_nothing_raised do
+      @m.new("1", "fred@example.com")
+    end
+    assert_nothing_raised do
+      @m.new("1", "fred@example.com")
+    end
+    assert_equal ["1"], @m.lookup{|q| q[:email].eq("fred@example.com")}
   end
 
   def test_deindexing_old_values

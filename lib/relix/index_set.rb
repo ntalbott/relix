@@ -138,10 +138,10 @@ module Relix
         ((watch = index.watch(value, old_value)) && redis.watch(*watch))
 
         if index.index?(redis, object, value)
+          new_current_values[name] = value unless index.attribute_immutable?
           next if value == old_value
           next unless index.filter(redis, object, value)
 
-          new_current_values[name] = value unless index.attribute_immutable?
           query_value = index.query(redis, value)
           proc do
             index.index(redis, pk, object, value, old_value, *query_value)

@@ -1,3 +1,7 @@
+### 2.3.1
+
+* Fix current_values not being written out (ntalbott)
+
 ### 2.3.0
 
 * Add conditional indexing. (ntalbott)
