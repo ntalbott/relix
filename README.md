@@ -326,7 +326,7 @@ To remove an index, first change its declaration like so:
 
     class Transaction
       relix do
-        obsolete{:multi, :account_key, order: :created_at}
+        obsolete { multi(:account_key, order: :created_at) }
       end
     end
 
