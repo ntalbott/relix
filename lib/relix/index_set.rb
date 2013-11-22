@@ -153,13 +153,13 @@ module Relix
         end
       end.compact
 
+      ops << proc do
+        redis.del(current_values_name)
+      end
+
       if new_current_values.any?
         ops << proc do
           redis.hmset(current_values_name, *new_current_values.flatten)
-        end
-      elsif current_values.any?
-        ops << proc do
-          redis.del(current_values_name)
         end
       end
 

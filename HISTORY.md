@@ -1,3 +1,7 @@
+###
+
+* Properly reset current values hash (duff)
+
 ### 2.3.2
 
 * Make uniqueness check more robust (ntalbott)
