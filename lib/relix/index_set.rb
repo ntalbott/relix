@@ -156,6 +156,8 @@ module Relix
       if new_current_values.any?
         ops << proc do
           redis.hmset(current_values_name, *new_current_values.flatten)
+          keys_to_remove = current_values.keys - new_current_values.keys
+          redis.hdel(current_values_name, keys_to_remove) if keys_to_remove.any?
         end
       elsif current_values.any?
         ops << proc do
