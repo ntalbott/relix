@@ -35,6 +35,10 @@ class PrimaryKeyIndexTest < RelixTest
     assert_equal [@omelia_family.key], Family.lookup{|q| q[:key].eq('omelia')}
   end
 
+  def test_count
+    assert_equal 2, Family.lookup_count(:key)
+  end
+
   def test_lookup_all_returns_in_insertion_order
     assert_equal @everyone.collect{|e| e.key}, Person.lookup
   end

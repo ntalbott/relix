@@ -30,6 +30,10 @@ module Relix
       relix.lookup_values(index)
     end
 
+    def lookup_count(index)
+      relix.count(index)
+    end
+
     def deindex_by_primary_key!(pk)
       relix.deindex_by_primary_key!(pk)
     end

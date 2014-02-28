@@ -125,6 +125,10 @@ module Relix
       self[index].values(redis)
     end
 
+    def count(index)
+      self[index].count(redis)
+    end
+
     def index_ops(object, pk)
       current_values_name = current_values_name(pk)
       redis.watch current_values_name

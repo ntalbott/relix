@@ -1,5 +1,6 @@
-###
+### 2.4.0
 
+* Add count support (ntalbott)
 * Properly reset current values hash (duff)
 
 ### 2.3.2
