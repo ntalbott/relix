@@ -12,6 +12,10 @@ class MultiIndexTest < RelixTest
     assert_equal [], Person.lookup{|q| q[:family_key].eq("bogus")}
   end
 
+  def test_count
+    assert_equal @talbotts.size, Person.lookup_count(:family_key, @talbott_family.key)
+  end
+
   def test_deindex
     assert Person.lookup{|q| q[:family_key].eq(@talbott_family.key)}.include?(@nathaniel.key), "expected Talbott family to include Nathaniel's key"
     @nathaniel.delete

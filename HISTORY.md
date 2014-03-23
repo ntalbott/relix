@@ -1,3 +1,7 @@
+### 2.4.1
+
+* Add count support for multi (ntalbott)
+
 ### 2.4.0
 
 * Add count support (ntalbott)

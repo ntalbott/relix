@@ -1,5 +1,5 @@
 module Relix
-  VERSION = "2.4.0"
+  VERSION = "2.4.1"
   REDIS_VERSION = "2.6"
 
   class Version

@@ -125,8 +125,8 @@ module Relix
       self[index].values(redis)
     end
 
-    def count(index)
-      self[index].count(redis)
+    def count(index, value)
+      self[index].count(redis, value)
     end
 
     def index_ops(object, pk)

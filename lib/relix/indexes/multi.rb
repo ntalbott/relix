@@ -35,6 +35,10 @@ module Relix
       position
     end
 
+    def count(r, value)
+      r.zcard(key_for(value))
+    end
+
     def key_for(value)
       @set.keyer.component(name, value)
     end

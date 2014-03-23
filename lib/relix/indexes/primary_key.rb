@@ -31,7 +31,7 @@ module Relix
       r.zrange(name, *range_from_options(r, options))
     end
 
-    def count(r)
+    def count(r, value=nil)
       r.zcard(name)
     end
 
